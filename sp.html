@@ -47,7 +47,7 @@ a{color:var(--color-text);} a:hover{color:var(--color-accent);}
       <canvas ref="{{ seedRef }}" width="380" height="380" style="position:absolute;left:0;top:0;width:112px;height:112px;touch-action:none;"></canvas>
       <div style="position:absolute;left:11px;top:9px;font:500 7px 'IBM Plex Mono',monospace;line-height:1.35;color:#201e1d;pointer-events:none;">seed pack<br><span style="color:#8d8a84;">{{ packDate }}</span></div>
     </div>
-    <button onClick="{{ gyro }}" style="position:absolute;left:{{ gyroX }}px;top:{{ gyroY }}px;display:{{ gyroDisp }};align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;height:28px;font-size:11px;border:0;background:rgba(251,251,249,.8);color:#201e1d;z-index:6;">傾けて揺らす</button>
+    
     <div style="position:absolute;left:18px;right:18px;top:96px;font:500 10px 'IBM Plex Mono',monospace;color:#a0532e;z-index:30;pointer-events:none;word-break:break-all;">{{ errText }}</div>
     <div style="position:absolute;left:18px;right:18px;bottom:{{ botY }}px;display:flex;justify-content:space-between;z-index:5;">
       <button onClick="{{ savePlant }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.8);color:#201e1d;">植物を保存</button>
@@ -150,7 +150,7 @@ const OBJ = {
 const OBJ_ZH = { person: '人', bicycle: '自転車', motorcycle: 'バイク', bird: '鳥', cat: '猫', dog: '犬', horse: '馬', sheep: '羊', cow: '牛', bear: 'クマ', zebra: 'シマウマ', giraffe: 'キリン', elephant: 'ゾウ', pizza: 'ピザ', sandwich: 'サンドイッチ', cake: 'ケーキ', donut: 'ドーナツ', 'hot dog': 'ホットドッグ', bowl: 'お椀', cup: 'カップ', bottle: 'ボトル', 'wine glass': 'グラス' };
 let detP = null;
 const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
-const getDetector = () => detP || (detP = withTimeout((window.cocoSsd ? cocoSsd.load({ base: 'lite_mobilenet_v2', modelUrl: 'models/coco-ssd-lite/model.json' }) /* スマホ：軽いモデル（約 19MB→ 実機のメモリ不足を避ける） */ : Promise.reject()).catch(e => { window.__stage = 'detector error: ' + e; return null; }), 30000));
+const getDetector = () => detP || (detP = withTimeout((window.cocoSsd ? cocoSsd.load({ base: 'mobilenet_v2', modelUrl: 'models/coco-ssd/model.json' }) : Promise.reject()).catch(e => { window.__stage = 'detector error: ' + e; return null; }), 30000));
 // 小物体（远处的自行车、树上的鸟）整张图里容易漏：整张 + 2×2 重叠切块各识别一次，再合并
 async function detectTiled(det, img) {
   const W = img.naturalWidth, H = img.naturalHeight, out = [];
@@ -182,7 +182,7 @@ const CLIP_SCENE = [['the sea', '海', 'sea'], ['a river bank', '川辺', 'natur
 const CLIP_WEATHER = [['a clear blue sky', '晴れ'], ['a cloudy overcast sky', 'くもり'], ['a sunset sky', '夕暮れ'], ['a night sky', '夜']];
 let clipP = null;
 // 模型和运行库都放在本地文件夹 app/lib、app/models（不再从网上下载）
-const getClip = async () => null; // スマホ版：CLIP は重すぎて画面が固まるので使わない（物体認識と空の色だけ）
+const getClip = () => clipP || (clipP = withTimeout(import('./lib/transformers/transformers.min.js').then(T => { T.env.allowRemoteModels = true; T.env.allowLocalModels = false; T.env.backends.onnx.wasm.wasmPaths = new URL('lib/transformers/', location.href).href; return T.pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', { dtype: 'q8' }); }), 90000).catch(e => { console.warn('CLIP', e); return null; }));
 window.getClip = () => getClip();
 // 天气：CLIP 分不清晴和阴，所以先看照片天空的颜色——天空是饱和的蓝就是「晴」；暖色的天空或 CLIP 很确定是黄昏/夜时用那个；其余为「阴」
 // 天气：只看照片天空的颜色（上面 3 色）
