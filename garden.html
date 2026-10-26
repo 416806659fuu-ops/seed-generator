@@ -41,7 +41,7 @@
 </div>
 
 <script src="lib/seedcore_lsys1.js"></script>
-<script src="lib/seedpack_png.js"></script>
+<script src="lib/seedpack_png.js?v=2"></script>
 <script>
 // ===== 种子花园 v0.3：透视的地面；种子包先放在旁边，由每个人自己拖到地面上撒 =====
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d'), CW = 1600, CH = 936, DPR = 2;
@@ -69,7 +69,8 @@ function unproj(sx, sy) {
 const OWNER_COLS = ['#d9734e', '#4f86c6', '#d6a833', '#7a9e5a', '#a8679e', '#3f9c96', '#c45b6b', '#7d6fb8'];
 const owners = new Map(); // owner id → 颜色
 const ownerOf = pack => (pack.owner && pack.owner.id) || ('pack-' + pack.id);
-const ownerCol = oid => { if (!owners.has(oid)) owners.set(oid, OWNER_COLS[owners.size % OWNER_COLS.length]); return owners.get(oid); };
+// 種パックに持ち主の色があればそれを使う（同じ色の人がもういれば、空いている色に）
+const ownerCol = (oid, want) => { if (!owners.has(oid)) { const used = [...owners.values()]; owners.set(oid, want && !used.includes(want) ? want : OWNER_COLS.find(c => !used.includes(c)) || OWNER_COLS[owners.size % OWNER_COLS.length]); } return owners.get(oid); };
 const packs = [];   // { pack, left: 还没撒的种子, el }
 const items = [];   // 撒到地上的种子
 
@@ -89,9 +90,9 @@ function addPack(pack) {
     same.left = pack.seeds.slice(); same.bySeed = new Map(same.left.map(sd => [sd.plant.seed + '|' + sd.act, sd]));
     same.sb.set(same.left.map(sd => ({ i: sd.id, rs: sd.plant.seed, act: sd.act, base: sd.color.base || '#9aa090', cl: sd.color.flower }))); drawCard(same); return say('種パックを補充しました');
   }
-  const P = { pack, left: pack.seeds.slice(), oid: ownerOf(pack) }; P.col = ownerCol(P.oid);
+  const P = { pack, left: pack.seeds.slice(), oid: ownerOf(pack) }; P.col = ownerCol(P.oid, pack.owner && pack.owner.color);
   const el = document.createElement('div'); el.className = 'card';
-  el.innerHTML = `<canvas width="380" height="380"></canvas><i style="position:absolute;right:18px;top:17px;width:10px;height:10px;border-radius:50%;background:${P.col}"></i><div class="lb">seed pack<br><span>${pack.day ? pack.day.replace(/-/g, '.') : ''} · <b class="n">${pack.seeds.length}</b></span></div>`;
+  el.innerHTML = `<canvas width="380" height="380"></canvas><i style="position:absolute;right:18px;top:17px;width:10px;height:10px;border-radius:50%;background:${P.col}"></i><div class="lb">${(pack.owner && pack.owner.name) ? pack.owner.name.replace(/[<>&]/g, '') : 'seed pack'}<br><span>${pack.day ? pack.day.replace(/-/g, '.') : ''} · <b class="n">${pack.seeds.length}</b></span></div>`;
   P.el = el; packs.push(P); document.getElementById('tray').appendChild(el); drawCard(P); bindCard(P);
 }
 // 卡片里：用种子生成器的重力效果（SeedBox：0.2g 浮力、碰撞、惯性），种子在包里晃

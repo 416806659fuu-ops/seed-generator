@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="_ds/modernist-b797ad02-10da-4586-840a-5580f3b31d75/styles.css">
 <script src="_ds/modernist-b797ad02-10da-4586-840a-5580f3b31d75/_ds_bundle.js"></script>
 <script src="lib/lite.umd.js"></script>
-<script src="lib/seedpack_png.js"></script>
+<script src="lib/seedpack_png.js?v=2"></script>
 <script src="lib/tf.min.js"></script>
 <script src="lib/coco-ssd.min.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Archivo:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
@@ -48,13 +48,18 @@ html,body{overscroll-behavior:none;}
     <svg width="22" height="22" viewBox="0 0 64 64" style="position:absolute;left:184px;bottom:200px;display:{{ recogDisp }};z-index:5;"><circle cx="32" cy="32" r="26" fill="none" stroke="rgba(32,30,29,.15)" stroke-width="8"></circle><circle cx="32" cy="32" r="26" fill="none" stroke="#201e1d" stroke-width="8" stroke-linecap="round" stroke-dasharray="163.36" stroke-dashoffset="{{ recogOff }}" transform="rotate(-90 32 32)"></circle></svg>
     <div style="position:absolute;left:{{ packX }}px;top:{{ packY }}px;width:112px;height:112px;border-radius:24px;background:#fbfbf9;box-shadow:0 1px 2px rgba(0,0,0,.06),0 8px 22px rgba(30,30,25,.16);overflow:hidden;will-change:transform;z-index:6;">
       <canvas ref="{{ seedRef }}" width="380" height="380" style="position:absolute;left:0;top:0;width:112px;height:112px;touch-action:none;"></canvas>
-      <div style="position:absolute;left:11px;top:9px;font:500 7px 'IBM Plex Mono',monospace;line-height:1.35;color:#201e1d;pointer-events:none;">seed pack<br><span style="color:#8d8a84;">{{ packDate }}</span></div>
+      <div style="position:absolute;left:11px;top:9px;font:500 7px 'IBM Plex Mono',monospace;line-height:1.35;color:#201e1d;pointer-events:none;">{{ ownerName }}<br><span style="color:#8d8a84;">{{ packDate }}</span></div>
     </div>
     
-    <div data-start="1" style="position:absolute;inset:0;z-index:40;display:{{ startDisp }};flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(243,242,242,.92);">
+    <div style="position:absolute;inset:0;z-index:40;display:{{ startDisp }};flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(243,242,242,.94);">
       <div style="font:600 18px 'IBM Plex Mono','Noto Sans JP',monospace;color:#201e1d;">種ジェネレーター</div>
-      <div style="font:400 13px 'Noto Sans JP',sans-serif;color:#605d5d;text-align:center;line-height:1.7;">スマホを傾けると、種パックの種が揺れます。<br>このあと「動作と方向」へのアクセスを許可してください。</div>
-      <div style="display:inline-flex;align-items:center;height:42px;padding:0 26px;border-radius:21px;background:#201e1d;color:#f3f2f2;font:600 14px 'Noto Sans JP',sans-serif;">タップしてはじめる</div>
+      <div style="display:flex;flex-direction:column;gap:6px;width:240px;">
+        <span style="font:500 12px 'Noto Sans JP',sans-serif;color:#605d5d;">ニックネーム</span>
+        <input data-name="1" type="text" maxlength="16" placeholder="なまえ" style="height:44px;border-radius:12px;border:1.5px solid #201e1d;background:#fbfbf9;padding:0 14px;font:500 16px 'Noto Sans JP',sans-serif;color:#201e1d;outline:none;-webkit-user-select:text;user-select:text;">
+        <span style="display:flex;align-items:center;gap:8px;font:400 11px 'Noto Sans JP',sans-serif;color:#8d8a84;"><i data-mycolor="1" style="width:12px;height:12px;border-radius:50%;"></i>この端末の色（種の庭で使います）</span>
+      </div>
+      <div style="font:400 12px 'Noto Sans JP',sans-serif;color:#605d5d;text-align:center;line-height:1.7;display:{{ iosNote }};">スマホを傾けると、種パックの種が揺れます。<br>このあと「動作と方向」へのアクセスを許可してください。</div>
+      <div data-start="1" style="display:inline-flex;align-items:center;height:44px;padding:0 28px;border-radius:22px;background:#201e1d;color:#f3f2f2;font:600 14px 'Noto Sans JP',sans-serif;">はじめる</div>
     </div>
     <div style="position:absolute;left:18px;right:18px;top:96px;font:500 10px 'IBM Plex Mono',monospace;color:#a0532e;z-index:30;pointer-events:none;word-break:break-all;">{{ errText }}</div>
     <div style="position:absolute;left:18px;right:18px;bottom:{{ botY }}px;display:flex;justify-content:space-between;z-index:5;">
@@ -160,6 +165,15 @@ let detP = null;
 // iPhone・iPad の Safari はページが使えるメモリが少なく、大きい認識モデル（CLIP 153MB＋物体認識 71MB）を読むとページごと落ちる
 // → iOS だけ軽い物体認識にして CLIP を使わない（Android・パソコンは精細版のまま）
 const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+// 端末ごとの持ち主：初めて開いたときに id と色を決めてこの端末に保存。ニックネームは開始画面で入れる
+const OWNER_COLS = ['#d9734e', '#4f86c6', '#d6a833', '#7a9e5a', '#a8679e', '#3f9c96', '#c45b6b', '#7d6fb8'];
+function getOwner() {
+  let o = null; try { o = JSON.parse(localStorage.getItem('seedOwner') || 'null'); } catch (e) {}
+  if (!o) o = { id: 'u-' + (Math.random() * 4294967296 >>> 0).toString(16).padStart(8, '0'), name: null };
+  if (!o.color) o.color = OWNER_COLS[Math.floor(Math.random() * OWNER_COLS.length)];
+  try { localStorage.setItem('seedOwner', JSON.stringify(o)); } catch (e) {}
+  return o;
+}
 const LIFT = 436 * .2; // スマホ：植物の主な部分が画面の真ん中に来るように、全体を上へ
 const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
 const getDetector = () => detP || (detP = withTimeout((window.cocoSsd ? cocoSsd.load(IOS ? { base: 'lite_mobilenet_v2', modelUrl: 'models/coco-ssd-lite/model.json' } : { base: 'mobilenet_v2', modelUrl: 'models/coco-ssd/model.json' }) : Promise.reject()).catch(e => { window.__stage = 'detector error: ' + e; return null; }), 30000));
@@ -505,8 +519,7 @@ async function buildPack(st, m, comp) {
   const times = seeds.map(x => x.t).sort();
   const body = { day: times[0] ? times[0].slice(0, 10) : null, span: [times[0] || null, times[times.length - 1] || null], seeds };
   // 种子的主人：第一次使用时在这个浏览器里生成一个随机编号（不需要注册）
-  let owner = null; try { owner = JSON.parse(localStorage.getItem('seedOwner') || 'null'); } catch (e) {}
-  if (!owner) { owner = { id: 'u-' + hex8(Math.random() * 4294967296) , name: null }; try { localStorage.setItem('seedOwner', JSON.stringify(owner)); } catch (e) {} }
+  const owner = getOwner();
   return { format: SEEDPACK_FORMAT, v: SEEDPACK_V, lsys: LSYS_V, owner, id: 'sp-' + hex8(fnv(seeds.map(x => x.id).join('') + body.day)), created: isoLocal(Date.now()), generator: 'seed-generator m0.1', sample: !!st.sample, ...body };
 }
 // 短码：pack JSON → deflate → base64url，前缀 SP1.（以后可放进二维码或链接）
@@ -552,12 +565,17 @@ class Component extends DCLogic {
   };
   gyro = () => { DeviceOrientationEvent.requestPermission().then(r => { if (r === 'granted') this.setState({ gyroOn: true }); }).catch(() => {}); if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(() => {}); };
   componentDidMount() {
-    const bindStart = () => { const el = document.querySelector('[data-start]'); if (!el) return setTimeout(bindStart, 200); if (el._b) return; el._b = 1;
+    const bindStart = () => { const el = document.querySelector('[data-start]'), nm = document.querySelector('[data-name]'), dot = document.querySelector('[data-mycolor]'); if (!el) return setTimeout(bindStart, 200); if (el._b) return; el._b = 1;
+      const me = getOwner(); if (nm && me.name) nm.value = me.name; if (dot) dot.style.background = me.color;
       el.addEventListener('click', () => {
         // 許可のたずね方は、タップの中ですぐ（await の前に）呼ぶ必要がある
-        try { const p = DeviceOrientationEvent.requestPermission(); p.then(r => this.setState({ gyroOn: r === 'granted', errText: r === 'granted' ? '' : '傾きセンサーが許可されませんでした' })).catch(e => this.setState({ errText: 'センサー: ' + (e && e.message || e) })); } catch (e) {}
-        try { if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(() => {}); } catch (e) {}
-        this.setState({ started: true });
+        if (IOS && window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) {
+          try { DeviceOrientationEvent.requestPermission().then(r => this.setState({ gyroOn: r === 'granted', errText: r === 'granted' ? '' : '傾きセンサーが許可されませんでした' })).catch(e => this.setState({ errText: 'センサー: ' + (e && e.message || e) })); } catch (e) {}
+          try { if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(() => {}); } catch (e) {}
+        }
+        const o = getOwner(); o.name = (nm && nm.value.trim()) || null; try { localStorage.setItem('seedOwner', JSON.stringify(o)); } catch (e) {}
+        if (nm) nm.blur();
+        this.setState({ started: true, ownerName: o.name });
       }); };
     bindStart();
     const showErr = m => this.setState({ errText: String(m).slice(0, 200) });
@@ -879,14 +897,14 @@ class Component extends DCLogic {
       cells, acts, seedBlobs,
       photoFilter: (this.props.photosBW ?? false) ? 'grayscale(1)' : 'none',
       scale: st.scale, stageW: Math.floor(1600 * st.scale), stageH: Math.floor(936 * st.scale), wrapRef: this.wrapRef, plantRef: this.plantRef, overRef: this.overRef,
-      tags: this.tagWords(m), packDate: (() => { const d = st.items[0] && st.items[0].date ? new Date(st.items[0].date) : null; return d ? d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0') + ' · ' + st.items.length : '—'; })(),
+      tags: this.tagWords(m), packDate: (() => { const ds = st.items.map(it => it.date).filter(Boolean); if (!ds.length) return '—'; const a = new Date(Math.min(...ds)), b = new Date(Math.max(...ds)), p2 = n => String(n).padStart(2, '0'), hm = d => p2(d.getHours()) + ':' + p2(d.getMinutes()); return a.getFullYear() + '.' + p2(a.getMonth() + 1) + '.' + p2(a.getDate()) + ' ' + hm(a) + '–' + hm(b) + ' · ' + st.items.length; })(),
       boardH: Math.ceil(st.boardH || 844), plantS: st.plantS || .968, plantL: PX, plantT: PY, topY: 52, botY: 30,
       strip: (() => { // 写真の帯：撮影順。選ばれた写真が真ん中に来るように並べる
         const fk = st.hp != null ? st.hp : st.autoK, ord = m.plants.map(p => p.i), n = ord.length, ci = Math.max(0, ord.indexOf(fk)), S = 60, B = 84, G = 8;
         let x = 195 - B / 2 - ord.slice(0, ci).length * (S + G);
         return ord.map((i, j) => { const on = i === fk, sz = on ? B : S, it = { k: i, x: Math.round(x), b: on ? 14 : 0, s: sz, bgi: 'url("' + items[i].src + '")', bp: (() => { const a = an[i]; if (!a || !a.obj) return 'center'; const [x, y, w, h] = a.obj.bbox; return `${Math.round((x + w / 2) / a.iw * 100)}% ${Math.round((y + h / 2) / a.ih * 100)}%`; })(), op: fk == null || on ? 1 : .6, sh: on ? '0 0 0 2.5px #fff, 0 6px 16px rgba(0,0,0,.22)' : '0 2px 6px rgba(0,0,0,.12)', sc: st.pressK === i ? .82 : 1, tap: () => this.setState({ hp: st.hp === i ? null : i, hg: st.hp === i ? null : m.pOf[i] }) }; x += sz + G; return it; });
       })(),
-      onMove: this.onMove, onLeave: this.onLeave, seedRef: this.seedRef, savePlant: this.savePlant, gyro: this.gyro, gyroDisp: window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && navigator.maxTouchPoints > 0 && !st.gyroOn ? 'inline-flex' : 'none', clear: this.clear, save: this.save, hintDisp: items.length && !st.busy ? 'block' : 'none', recogDisp: st.recog ? 'block' : 'none', recogOff: (163.36 * (1 - (st.recog || 0))).toFixed(1), emptyDisp: items.length || st.busy ? 'none' : 'flex', progDisp: st.busy || st.picking ? 'flex' : 'none', errText: st.errText || '', startDisp: st.started || !(window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))) ? 'none' : 'flex', // iPhone・iPad だけ
+      onMove: this.onMove, onLeave: this.onLeave, seedRef: this.seedRef, savePlant: this.savePlant, gyro: this.gyro, gyroDisp: window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && navigator.maxTouchPoints > 0 && !st.gyroOn ? 'inline-flex' : 'none', clear: this.clear, save: this.save, hintDisp: items.length && !st.busy ? 'block' : 'none', recogDisp: st.recog ? 'block' : 'none', recogOff: (163.36 * (1 - (st.recog || 0))).toFixed(1), emptyDisp: items.length || st.busy ? 'none' : 'flex', progDisp: st.busy || st.picking ? 'flex' : 'none', errText: st.errText || '', startDisp: st.started ? 'none' : 'flex', iosNote: IOS && window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission ? 'block' : 'none', ownerName: st.ownerName || 'seed pack',
       startTapOld: () => { try { DeviceOrientationEvent.requestPermission().then(r => this.setState({ gyroOn: r === 'granted' })).catch(() => {}); if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(() => {}); } catch (e) {} this.setState({ started: true }); }, ...(() => { const [x, y] = this.packSpots()[st.packPos || 0]; return { packX: x, packY: y, gyroX: x, gyroY: y < 200 ? y + 120 : y - 42 }; })(), pick: this.pick, progW: Math.round((st.prog || 0) * 100) + '%', progOff: (163.36 * (1 - Math.max(.08, st.prog || 0))).toFixed(1), progText: st.progText, noteDisp: !st.busy && st.progText ? 'block' : 'none'
     };
   }
