@@ -24,20 +24,31 @@
   .pill.dark { background: #201e1d; color: #f3f2f2; border: 0; }
   #msg { position: absolute; right: 50px; top: 20px; font: 400 14px "Noto Sans JP", "Noto Sans SC"; color: #a0532e; z-index: 60; }
   /* 植物を選んだとき：その写真の「気配」（空の色・色のかたまり・物体の位置）。合言葉で本物の写真 */
-  #kehai { position: absolute; left: 60px; top: 150px; width: 270px; display: none; flex-direction: column; gap: 10px; z-index: 30; }
+  /* 植物を選んだとき：その写真と、つながっている植物の写真の「気配」。持ち主の番号で本物の写真 */
+  #kehai { position: absolute; left: 50px; top: 110px; width: 300px; max-height: 630px; overflow-y: auto; display: none; flex-direction: column; gap: 12px; z-index: 30; padding: 4px 6px 20px 4px; scrollbar-width: none; }
+  #kehai::-webkit-scrollbar { display: none; }
   #kehai.on { display: flex; }
-  #kehai .fr { position: relative; width: 270px; border-radius: 22px; overflow: hidden; background: #fbfbf9; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 10px 28px rgba(30,30,25,.14); }
-  #kehai canvas, #kehai img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-  #kehai .blob { filter: blur(14px); transform: scale(1.12); }
-  #kehai img { object-fit: cover; opacity: 0; transition: opacity 1.2s; }
-  #kehai img.on { opacity: 1; }
-  #kehai .meta { display: flex; align-items: center; gap: 8px; font: 500 13px 'IBM Plex Mono', 'Noto Sans JP', monospace; }
-  #kehai .dot { width: 9px; height: 9px; border-radius: 50%; }
+  #kehai .kcard { display: flex; flex-direction: column; gap: 6px; }
+  #kehai .fr { position: relative; width: 100%; border-radius: 18px; overflow: hidden; background: #fbfbf9; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 22px rgba(30,30,25,.14); cursor: pointer; }
+  #kehai .fr canvas, #kehai .fr img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  #kehai .blob { filter: blur(12px); transform: scale(1.14); }
+  #kehai .fr img { object-fit: cover; opacity: 0; transition: opacity 1.2s; }
+  #kehai .fr img.on { opacity: 1; }
+  #kehai .meta { display: flex; align-items: center; gap: 6px; font: 500 11px 'IBM Plex Mono', 'Noto Sans JP', monospace; }
+  #kehai .main .kcard .meta { font-size: 13px; }
+  #kehai .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
   #kehai .tm { color: #8d8a84; margin-left: auto; }
-  #kehai .kw { font: 400 13px 'Noto Sans JP', sans-serif; color: #605d5d; }
-  #kehai .pass { display: none; gap: 8px; } #kehai .pass.on { display: flex; }
-  #kehai .pass input { letter-spacing: .2em; font-family: 'IBM Plex Mono', monospace; flex: 1; min-width: 0; height: 38px; border-radius: 19px; border: 1.5px solid #201e1d; background: #fbfbf9; padding: 0 14px; font: 500 14px 'Noto Sans JP', sans-serif; outline: none; }
-  #kehai .note { font: 400 12px 'Noto Sans JP', sans-serif; color: #a0532e; min-height: 16px; }
+  #kehai .kw { font: 400 11px 'Noto Sans JP', sans-serif; color: #605d5d; }
+  #kehai .main .kcard .kw { font-size: 13px; }
+  #kehai .ph { align-self: flex-start; font: 600 11px 'Noto Sans JP', sans-serif; padding: 4px 12px; border: 1.5px solid #201e1d; border-radius: 13px; cursor: pointer; background: transparent; }
+  #kehai .sec { display: none; flex-direction: column; gap: 8px; } #kehai .sec.on { display: flex; }
+  #kehai .hd { display: flex; align-items: center; gap: 8px; font: 500 12px 'Noto Sans JP', sans-serif; color: #201e1d; margin-top: 6px; }
+  #kehai .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 10px; }
+  #kehai .pass { display: none; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 2; background: rgba(243,242,242,.92); padding: 6px; border-radius: 22px; }
+  #kehai .pass.on { display: flex; }
+  #kehai .pw { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  #kehai .pass input { flex: 1; min-width: 0; height: 36px; border-radius: 18px; border: 1.5px solid #201e1d; background: #fbfbf9; padding: 0 12px; font: 500 14px 'IBM Plex Mono', monospace; letter-spacing: .2em; outline: none; }
+  #kehai .note { font: 400 12px 'Noto Sans JP', sans-serif; color: #a0532e; min-height: 0; }
   #kehai .shake { animation: shake .35s; } @keyframes shake { 25% { transform: translateX(-6px) } 75% { transform: translateX(6px) } }
   #trayHint { font: 400 12px 'IBM Plex Mono', 'Noto Sans SC', monospace; color: #8d8a84; line-height: 1.5; }
 </style>
@@ -54,12 +65,11 @@
   </div>
   <div id="msg"></div>
   <div id="kehai">
-    <div class="fr"><canvas class="blob" width="520" height="520"></canvas><canvas class="line" width="520" height="520"></canvas><img class="photo" alt=""></div>
-    <div class="meta"><i class="dot"></i><span class="who"></span><span class="tm"></span></div>
-    <div class="kw"></div>
-    <div class="ask"><button class="pill" id="askBtn">写真を見る</button></div>
-    <div class="pass"><input id="passIn" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="持ち主の番号（6 けた）" autocomplete="off"><button class="pill dark" id="passGo">開く</button></div>
+    <div class="pass"><span class="pw"></span><input id="passIn" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="番号（6 けた）" autocomplete="off"><button class="pill dark" id="passGo">開く</button></div>
     <div class="note"></div>
+    <div class="main"></div>
+    <div class="sec same"><div class="hd"><svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke="#201e1d" stroke-width="1.6"/></svg>同じ植物</div><div class="grid"></div></div>
+    <div class="sec near"><div class="hd"><svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke="#201e1d" stroke-width="1.6" stroke-dasharray="2 4"/></svg>同じ時間</div><div class="grid"></div></div>
   </div>
   <div id="tray"></div>
 </div>
@@ -267,40 +277,46 @@ function timeline(c) {
 // ---------- 気配と写真 ----------
 const KW = { '晴': '晴れ', '阴': 'くもり', '黄昏': '夕暮れ', '池塘': '池', '自行车': '自転車', '野餐': 'ピクニック', '街道': '街', '河边': '川辺', '鸟': '鳥', '树林': '林', '公园': '公園', '食物': '食べ物', '动物': '動物' };
 const OBJ_JA = { bicycle: '自転車', bird: '鳥', person: '人', pizza: 'ピザ', cup: 'カップ', bowl: 'お椀', 'dining table': 'テーブル', dog: '犬', cat: '猫', motorcycle: 'バイク', bottle: 'ボトル', cake: 'ケーキ', sandwich: 'サンドイッチ' };
-const kh = document.getElementById('kehai'), khImg = kh.querySelector('.photo'); let khSel = null, khTimer = null;
+const kh = document.getElementById('kehai'); let khSel = null, khPack = null, khTimer = null;
 function packOf(it) { const P = packs.find(p => p.pack.id === it.pk); return P && P.pack; }
-function showKehai(it) {
-  khSel = it; clearTimeout(khTimer); khImg.classList.remove('on'); kh.querySelector('.pass').classList.remove('on'); kh.querySelector('.note').textContent = '';
-  if (!it) { kh.classList.remove('on'); return; }
-  const sd = it.sd, pk = packOf(it) || {}, fr = sd.frame || { aspect: 1.333 }, W = 270, H = Math.round(Math.max(200, Math.min(360, W / fr.aspect)));
-  kh.querySelector('.fr').style.height = H + 'px';
-  const b = kh.querySelector('.blob').getContext('2d'), l = kh.querySelector('.line').getContext('2d'), CWk = 520, CHk = 520;
-  b.clearRect(0, 0, CWk, CHk); l.clearRect(0, 0, CWk, CHk);
-  // 上：空の 5 色（上→下）、下：その写真の主な色のかたまり
-  const sky = sd.sky || ['#cfd8e2', '#d8dfe7', '#e2e7ec', '#ebeef1', '#f1f2f3'], g = b.createLinearGradient(0, 0, 0, CHk * .55);
-  sky.forEach((c, i) => g.addColorStop(i / (sky.length - 1), c)); b.fillStyle = g; b.fillRect(0, 0, CWk, CHk * .6);
+// 写真の「気配」を描いたカードを 1 枚つくる
+function makeCard(it, big) {
+  const sd = it.sd, pk = packOf(it) || {}, fr = sd.frame || { aspect: 1.333 }, W = big ? 280 : 135, H = Math.round(Math.max(W * .62, Math.min(W * 1.3, W / fr.aspect)));
+  const el = document.createElement('div'); el.className = 'kcard'; el._it = it;
+  el.innerHTML = `<div class="fr" style="height:${H}px"><canvas class="blob" width="260" height="260"></canvas><canvas class="line" width="260" height="260"></canvas><img alt=""></div><div class="meta"><i class="dot"></i><span class="who"></span><span class="tm"></span></div><div class="kw"></div>`;
+  const b = el.querySelector('.blob').getContext('2d'), l = el.querySelector('.line').getContext('2d'), S = 260;
+  const sky = sd.sky || ['#cfd8e2', '#d8dfe7', '#e2e7ec', '#ebeef1', '#f1f2f3'], g = b.createLinearGradient(0, 0, 0, S * .55);
+  sky.forEach((c, i) => g.addColorStop(i / (sky.length - 1), c)); b.fillStyle = g; b.fillRect(0, 0, S, S * .6);
   const cols = [sd.color.base, sd.color.leaf, sd.color.stem, ...(sd.color.flower || [])].filter(Boolean), R = rng(sd.plant.seed);
-  b.fillStyle = sd.color.base || '#a9a59a'; b.fillRect(0, CHk * .5, CWk, CHk * .5);
-  for (let i = 0; i < 14; i++) { b.fillStyle = cols[i % cols.length]; b.globalAlpha = .75; b.beginPath(); b.ellipse(R() * CWk, CHk * (.5 + R() * .5), 40 + R() * 90, 25 + R() * 50, 0, 0, Math.PI * 2); b.fill(); }
+  b.fillStyle = sd.color.base || '#a9a59a'; b.fillRect(0, S * .5, S, S * .5);
+  for (let i = 0; i < 14; i++) { b.fillStyle = cols[i % cols.length]; b.globalAlpha = .75; b.beginPath(); b.ellipse(R() * S, S * (.5 + R() * .5), 20 + R() * 45, 12 + R() * 25, 0, 0, Math.PI * 2); b.fill(); }
   b.globalAlpha = 1;
-  // 物体があった場所：持ち主の色の点線
-  if (fr.obj) { const [x, y, w, h] = fr.obj; l.strokeStyle = it.ocol || '#201e1d'; l.lineWidth = 4; l.setLineDash([10, 10]); l.strokeRect(x * CWk, y * CHk, w * CWk, h * CHk); }
-  const own = pk.owner || {}; kh.querySelector('.dot').style.background = it.ocol || '#999'; kh.querySelector('.who').textContent = own.name || 'seed pack';
-  const m = /T(\d\d:\d\d)/.exec(sd.t || ''); kh.querySelector('.tm').textContent = m ? m[1] : '';
-  const tg = sd.tags || {}, words = [KW[tg.weather] || tg.weather, OBJ_JA[tg.object] || KW[tg.scene] || tg.scene].filter(Boolean);
-  kh.querySelector('.kw').textContent = words.join(' · ');
-  kh.querySelector('.ask').style.display = pk.vault && pk.vault.photos[sd.id] ? '' : 'none';
-  kh.classList.add('on');
+  if (fr.obj) { const [x, y, w, h] = fr.obj; l.strokeStyle = it.ocol || '#201e1d'; l.lineWidth = big ? 2.5 : 3; l.setLineDash([6, 6]); l.strokeRect(x * S, y * S, w * S, h * S); }
+  el.querySelector('.dot').style.background = it.ocol || '#999'; el.querySelector('.who').textContent = (pk.owner && pk.owner.name) || 'seed pack';
+  const m = /T(\d\d:\d\d)/.exec(sd.t || ''); el.querySelector('.tm').textContent = m ? m[1] : '';
+  const tg = sd.tags || {}; el.querySelector('.kw').textContent = [KW[tg.weather] || tg.weather, OBJ_JA[tg.object] || KW[tg.scene] || tg.scene].filter(Boolean).join(' · ');
+  if (pk.vault && pk.vault.photos[sd.id]) { const btn = document.createElement('button'); btn.className = 'ph'; btn.textContent = '写真を見る'; btn.onclick = () => askPass(pk, it.ocol); el.appendChild(btn); }
+  el.querySelector('.fr').onclick = () => { sel = it; }; // 小さいカードを押すと、その植物を選ぶ
+  return el;
 }
-document.getElementById('askBtn').onclick = () => { kh.querySelector('.pass').classList.add('on'); const i = document.getElementById('passIn'); i.value = ''; i.focus(); };
+function showKehai(it) {
+  khSel = it; clearTimeout(khTimer); kh.querySelector('.pass').classList.remove('on'); kh.querySelector('.note').textContent = '';
+  if (!it) { kh.classList.remove('on'); return; }
+  const main = kh.querySelector('.main'); main.innerHTML = ''; main.appendChild(makeCard(it, true));
+  const same = sameOf(it), near = nearOf(it).filter(o => !same.includes(o));
+  [['.same', same], ['.near', near]].forEach(([c, list]) => { const sec = kh.querySelector(c), grid = sec.querySelector('.grid'); grid.innerHTML = ''; list.forEach(o => grid.appendChild(makeCard(o, false))); sec.classList.toggle('on', list.length > 0); });
+  kh.classList.add('on'); kh.scrollTop = 0;
+}
+function askPass(pk, col) { khPack = pk; const ps = kh.querySelector('.pass'); ps.classList.add('on'); ps.querySelector('.pw').style.background = col || '#999'; kh.querySelector('.note').textContent = ((pk.owner && pk.owner.name) || 'seed pack') + ' の番号'; const i = document.getElementById('passIn'); i.value = ''; i.focus(); kh.scrollTop = 0; }
+// 番号が合えば、表示中のカードのうち、その種パックの写真を全部開く（20 秒後に気配へもどる）
 async function tryOpen() {
-  const it = khSel, pk = it && packOf(it), inp = document.getElementById('passIn'), note = kh.querySelector('.note'); if (!pk) return;
-  note.textContent = '…'; const key = await vaultKey(pk, inp.value);
+  const pk = khPack, inp = document.getElementById('passIn'), note = kh.querySelector('.note'); if (!pk) return;
+  const key = await vaultKey(pk, inp.value);
   if (!key) { note.textContent = '番号が違います'; inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); return; }
-  const url = await vaultPhoto(pk, key, it.sd.id); inp.value = ''; kh.querySelector('.pass').classList.remove('on'); note.textContent = '';
-  khImg.src = url; khImg.onload = () => khImg.classList.add('on');
-  // しばらく見せたら、また気配にもどる（写真は残さない）
-  clearTimeout(khTimer); khTimer = setTimeout(() => { khImg.classList.remove('on'); setTimeout(() => { URL.revokeObjectURL(url); khImg.removeAttribute('src'); }, 1300); }, 20000);
+  inp.value = ''; kh.querySelector('.pass').classList.remove('on'); note.textContent = '';
+  const urls = [];
+  for (const card of kh.querySelectorAll('.kcard')) { const it = card._it; if (packOf(it) !== pk) continue; const url = await vaultPhoto(pk, key, it.sd.id); if (!url) continue; urls.push(url); const img = card.querySelector('img'); img.src = url; img.onload = () => img.classList.add('on'); }
+  clearTimeout(khTimer); khTimer = setTimeout(() => { kh.querySelectorAll('.fr img').forEach(im => im.classList.remove('on')); setTimeout(() => urls.forEach(u => URL.revokeObjectURL(u)), 1300); }, 20000);
 }
 document.getElementById('passGo').onclick = tryOpen;
 document.getElementById('passIn').addEventListener('keydown', e => { if (e.key === 'Enter') tryOpen(); });
