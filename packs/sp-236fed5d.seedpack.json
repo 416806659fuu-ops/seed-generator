@@ -1,0 +1,477 @@
+{
+ "format": "seedpack",
+ "v": 1,
+ "lsys": 1,
+ "owner": {
+  "id": "u-demo000b",
+  "name": null
+ },
+ "id": "sp-236fed5d",
+ "created": "2026-10-24T17:01:42+09:00",
+ "generator": "seed-generator v1.18",
+ "sample": false,
+ "day": "2026-10-03",
+ "span": [
+  "2026-10-03T13:03:17+09:00",
+  "2026-10-03T17:27:05+09:00"
+ ],
+ "seeds": [
+  {
+   "id": "976da993",
+   "t": "2026-10-03T13:03:17+09:00",
+   "act": "food",
+   "plant": {
+    "rule": "ABOP-fig1.24e",
+    "seed": 2540546451,
+    "h": 0.841
+   },
+   "color": {
+    "base": "#524937",
+    "flower": [
+     "#eaaf50",
+     "#db7a24",
+     "#de6321",
+     "#b6ab86"
+    ],
+    "stem": "#5790e6",
+    "leaf": "#9bb72e"
+   },
+   "sky": [
+    "#494034",
+    "#b7b4af",
+    "#d5d9e0",
+    "#816950",
+    "#c9a45f"
+   ],
+   "tags": {
+    "weather": "黄昏",
+    "scene": "野餐",
+    "object": "pizza"
+   }
+  },
+  {
+   "id": "2463cf5a",
+   "t": "2026-10-03T13:48:20+09:00",
+   "act": "animal",
+   "plant": {
+    "rule": "ABOP-fig1.26",
+    "seed": 610520922,
+    "h": 0.475
+   },
+   "color": {
+    "base": "#899860",
+    "flower": [
+     "#a4b673",
+     "#aab34c",
+     "#9aa857",
+     "#7bbbc1"
+    ],
+    "stem": "#5790e6",
+    "leaf": "#acc17a"
+   },
+   "sky": [
+    "#e1ecf0",
+    "#b2b4a4",
+    "#85856e",
+    "#64624e",
+    "#454232"
+   ],
+   "tags": {
+    "weather": "阴",
+    "scene": "鸟",
+    "object": "bird"
+   }
+  },
+  {
+   "id": "804e8913",
+   "t": "2026-10-03T13:48:26+09:00",
+   "act": "nature",
+   "plant": {
+    "rule": "ABOP-fig5.11",
+    "seed": 2152630547,
+    "h": 0.839
+   },
+   "color": {
+    "base": "#4f543e",
+    "flower": [
+     "#92a25d",
+     "#93aa55",
+     "#7395c9",
+     "#7c99c0",
+     "#678198"
+    ],
+    "stem": "#869bb6",
+    "leaf": "#7f895c"
+   },
+   "sky": [
+    "#63789d",
+    "#474950",
+    "#d1d9e4",
+    "#90a0b9",
+    "#aebbce"
+   ],
+   "tags": {
+    "weather": "晴",
+    "scene": "池塘",
+    "object": null
+   }
+  },
+  {
+   "id": "031d560e",
+   "t": "2026-10-03T13:54:05+09:00",
+   "act": "ride",
+   "plant": {
+    "rule": "ABOP-fig1.24f",
+    "seed": 52254222,
+    "h": 0.535
+   },
+   "color": {
+    "base": "#95b1d5",
+    "flower": [
+     "#c2c8cc",
+     "#a9b0b2",
+     "#979e94"
+    ],
+    "stem": "#6897d5",
+    "leaf": "#717670"
+   },
+   "sky": [
+    "#7e9dca",
+    "#dadfe5",
+    "#bec9d7",
+    "#9db9d9",
+    "#424e4a"
+   ],
+   "tags": {
+    "weather": "晴",
+    "scene": "自行车",
+    "object": "bicycle"
+   }
+  },
+  {
+   "id": "3085871b",
+   "t": "2026-10-03T15:08:43+09:00",
+   "act": "food",
+   "plant": {
+    "rule": "ABOP-fig1.24e",
+    "seed": 814057243,
+    "h": 0.943
+   },
+   "color": {
+    "base": "#899fbc",
+    "flower": [
+     "#9d9771",
+     "#91916e",
+     "#2838d7",
+     "#617b9e"
+    ],
+    "stem": "#7b99c1",
+    "leaf": "#9bb72e"
+   },
+   "sky": [
+    "#637ba0",
+    "#829abd",
+    "#a0b7d4",
+    "#d0dbe6",
+    "#444650"
+   ],
+   "tags": {
+    "weather": "晴",
+    "scene": "野餐",
+    "object": null
+   }
+  },
+  {
+   "id": "6c2a4f4d",
+   "t": "2026-10-03T15:09:04+09:00",
+   "act": "nature",
+   "plant": {
+    "rule": "ABOP-fig5.11",
+    "seed": 1814712141,
+    "h": 0.553
+   },
+   "color": {
+    "base": "#738395",
+    "flower": [
+     "#7b9f60",
+     "#88956a",
+     "#aaa092",
+     "#6582a3",
+     "#859db7"
+    ],
+    "stem": "#8c9db0",
+    "leaf": "#788165"
+   },
+   "sky": [
+    "#e1ded8",
+    "#67798e",
+    "#b7bdc4",
+    "#7d8d9f",
+    "#9aa7b6"
+   ],
+   "tags": {
+    "weather": "阴",
+    "scene": "草地",
+    "object": null
+   }
+  },
+  {
+   "id": "fc44fecc",
+   "t": "2026-10-03T15:09:21+09:00",
+   "act": "nature",
+   "plant": {
+    "rule": "ABOP-fig5.11",
+    "seed": 4232380108,
+    "h": 0.835
+   },
+   "color": {
+    "base": "#b5cae1",
+    "flower": [
+     "#bee916",
+     "#b2cc33",
+     "#3d8cff",
+     "#549be8"
+    ],
+    "stem": "#5790e6",
+    "leaf": "#9bb72e"
+   },
+   "sky": [
+    "#87abdf",
+    "#94b6e5",
+    "#a3c2e8",
+    "#bdd2e7",
+    "#b2c8e2"
+   ],
+   "tags": {
+    "weather": "晴",
+    "scene": "草地",
+    "object": null
+   }
+  },
+  {
+   "id": "82d80cfd",
+   "t": "2026-10-03T15:38:21+09:00",
+   "act": "other",
+   "plant": {
+    "rule": "ABOP-fig1.24d",
+    "seed": 2195197181,
+    "h": 0.425
+   },
+   "color": {
+    "base": "#394c6c",
+    "flower": [
+     "#396dc6",
+     "#6f94c1",
+     "#4b77b4",
+     "#86a8b6"
+    ],
+    "stem": "#4567a1",
+    "leaf": "#9bb72e"
+   },
+   "sky": [
+    "#304569",
+    "#788ead",
+    "#40567b",
+    "#586f90",
+    "#acbccc"
+   ],
+   "tags": {
+    "weather": "晴",
+    "scene": "街道",
+    "object": null
+   }
+  },
+  {
+   "id": "bff39490",
+   "t": "2026-10-03T16:32:18+09:00",
+   "act": "ride",
+   "plant": {
+    "rule": "ABOP-fig1.24f",
+    "seed": 3220411536,
+    "h": 0.919
+   },
+   "color": {
+    "base": "#2b3326",
+    "flower": [
+     "#989486",
+     "#718e77",
+     "#4e76b1"
+    ],
+    "stem": "#5e94de",
+    "leaf": "#6f7772"
+   },
+   "sky": [
+    "#7096cd",
+    "#7da6dd",
+    "#95beeb",
+    "#b0d3f0",
+    "#cee0e6"
+   ],
+   "tags": {
+    "weather": "晴",
+    "scene": "自行车",
+    "object": "bicycle"
+   }
+  },
+  {
+   "id": "a065f946",
+   "t": "2026-10-03T16:48:13+09:00",
+   "act": "ride",
+   "plant": {
+    "rule": "ABOP-fig1.24f",
+    "seed": 2691037510,
+    "h": 0.483
+   },
+   "color": {
+    "base": "#4f4c42",
+    "flower": [
+     "#cecbbf",
+     "#adadae",
+     "#9b9799"
+    ],
+    "stem": "#5790e6",
+    "leaf": "#9bb72e"
+   },
+   "sky": [
+    "#d1e7ee",
+    "#d1ccbd",
+    "#a5a199",
+    "#946f55",
+    "#524c45"
+   ],
+   "tags": {
+    "weather": "阴",
+    "scene": "自行车",
+    "object": "bicycle"
+   }
+  },
+  {
+   "id": "69286907",
+   "t": "2026-10-03T16:48:56+09:00",
+   "act": "ride",
+   "plant": {
+    "rule": "ABOP-fig1.24f",
+    "seed": 1764256007,
+    "h": 1.045
+   },
+   "color": {
+    "base": "#54504c",
+    "flower": [
+     "#db9561",
+     "#857e7a",
+     "#ebc5a8"
+    ],
+    "stem": "#5790e6",
+    "leaf": "#9bb72e"
+   },
+   "sky": [
+    "#d0e5ed",
+    "#b9977d",
+    "#867660",
+    "#a6b2bc",
+    "#55534e"
+   ],
+   "tags": {
+    "weather": "黄昏",
+    "scene": "自行车",
+    "object": "bicycle"
+   }
+  },
+  {
+   "id": "7b5b059e",
+   "t": "2026-10-03T17:03:02+09:00",
+   "act": "animal",
+   "plant": {
+    "rule": "ABOP-fig1.26",
+    "seed": 2069562782,
+    "h": 0.484
+   },
+   "color": {
+    "base": "#c7c6b9",
+    "flower": [
+     "#c8c9c5",
+     "#afafac",
+     "#9b9a97"
+    ],
+    "stem": "#5790e6",
+    "leaf": "#9bb72e"
+   },
+   "sky": [
+    "#b3b7b4",
+    "#8e8f8b",
+    "#4b4c4b",
+    "#c7c8bd",
+    "#dcd7c0"
+   ],
+   "tags": {
+    "weather": "黄昏",
+    "scene": "街道",
+    "object": "bird"
+   }
+  },
+  {
+   "id": "df3cb4d3",
+   "t": "2026-10-03T17:22:09+09:00",
+   "act": "ride",
+   "plant": {
+    "rule": "ABOP-fig1.24f",
+    "seed": 3745297619,
+    "h": 0.941
+   },
+   "color": {
+    "base": "#3a402d",
+    "flower": [
+     "#c5c8c7",
+     "#abb0af",
+     "#959d9b"
+    ],
+    "stem": "#909fac",
+    "leaf": "#7c8d59"
+   },
+   "sky": [
+    "#ebe7dc",
+    "#e3d7cc",
+    "#bbbfc5",
+    "#9eacb6",
+    "#748086"
+   ],
+   "tags": {
+    "weather": "黄昏",
+    "scene": "自行车",
+    "object": "bicycle"
+   }
+  },
+  {
+   "id": "8e0801c9",
+   "t": "2026-10-03T17:27:05+09:00",
+   "act": "ride",
+   "plant": {
+    "rule": "ABOP-fig1.24f",
+    "seed": 2382889417,
+    "h": 0.432
+   },
+   "color": {
+    "base": "#b6afa5",
+    "flower": [
+     "#3333cc",
+     "#7a7ade",
+     "#8f8fe3"
+    ],
+    "stem": "#5790e6",
+    "leaf": "#9bb72e"
+   },
+   "sky": [
+    "#979ea5",
+    "#bec0be",
+    "#b5b0a7",
+    "#d9d6c9",
+    "#e8d4ad"
+   ],
+   "tags": {
+    "weather": "黄昏",
+    "scene": "自行车",
+    "object": "bicycle"
+   }
+  }
+ ]
+}

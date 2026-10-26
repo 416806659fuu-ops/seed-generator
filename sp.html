@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>種ジェネレーター（スマホ）</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-b797ad02-10da-4586-840a-5580f3b31d75/styles.css">
+<script src="_ds/modernist-b797ad02-10da-4586-840a-5580f3b31d75/_ds_bundle.js"></script>
+<script src="lib/lite.umd.js"></script>
+<script src="lib/seedpack_png.js"></script>
+<script src="lib/tf.min.js"></script>
+<script src="lib/coco-ssd.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Archivo:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+<style>
+body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body),"Noto Sans JP", "Noto Sans SC",sans-serif;}
+a{color:var(--color-text);} a:hover{color:var(--color-accent);}
+</style>
+</helmet>
+<div style="position:fixed;inset:0;overflow:hidden;background:#f3f2f2;">
+  <div ref="{{ wrapRef }}" style="position:absolute;left:0;top:0;width:390px;height:{{ boardH }}px;transform-origin:0 0;transform:scale({{ scale }});overflow:hidden;">
+    <div ref="{{ plantRef }}" style="position:absolute;left:{{ plantL }}px;top:{{ plantT }}px;width:552px;height:872px;overflow:hidden;transform-origin:0 0;transform:scale({{ plantS }});"><canvas width="276" height="436" style="position:absolute;left:0;top:0;width:552px;height:872px;"></canvas><canvas width="276" height="436" style="position:absolute;left:0;top:0;width:552px;height:872px;filter:blur(14px);"></canvas><canvas width="276" height="436" style="position:absolute;left:0;top:0;width:552px;height:872px;filter:blur(8px);"></canvas><canvas width="276" height="436" style="position:absolute;left:0;top:0;width:552px;height:872px;filter:blur(12px);"></canvas><canvas width="276" height="436" style="position:absolute;left:0;top:0;width:552px;height:872px;filter:blur(28px);"></canvas><canvas width="276" height="436" style="position:absolute;left:0;top:0;width:552px;height:872px;filter:blur(3px);"></canvas><canvas width="276" height="436" style="position:absolute;left:0;top:0;width:552px;height:872px;filter:blur(2px);"></canvas><canvas width="276" height="436" style="position:absolute;left:0;top:0;width:552px;height:872px;filter:blur(2px);"></canvas><canvas width="276" height="436" style="position:absolute;left:0;top:0;width:552px;height:872px;filter:blur(9px);"></canvas><canvas width="552" height="872" style="position:absolute;left:0;top:0;width:552px;height:872px;"></canvas></div>
+    <canvas ref="{{ overRef }}" width="780" height="2000" style="position:absolute;left:0;top:0;width:390px;height:1000px;pointer-events:none;"></canvas>
+    <div style="position:absolute;left:0;right:0;top:40%;display:{{ emptyDisp }};justify-content:center;font-size:17px;font-weight:700;color:#605d5d;">写真を入れてください</div>
+    <div style="position:absolute;inset:0;display:{{ progDisp }};align-items:center;justify-content:center;background:rgba(251,251,249,.6);z-index:20;">
+      <svg width="64" height="64" viewBox="0 0 64 64" style="display:block;"><circle cx="32" cy="32" r="26" fill="none" stroke="rgba(32,30,29,.12)" stroke-width="5"></circle><circle cx="32" cy="32" r="26" fill="none" stroke="#201e1d" stroke-width="5" stroke-linecap="round" stroke-dasharray="163.36" stroke-dashoffset="{{ progOff }}" transform="rotate(-90 32 32)" style="transition:stroke-dashoffset .3s;"></circle></svg>
+    </div>
+    <div style="position:absolute;left:18px;right:18px;top:{{ topY }}px;display:flex;justify-content:space-between;gap:8px;z-index:5;">
+      <button onClick="{{ clear }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.75);color:#201e1d;">クリア</button>
+      <span style="display:flex;gap:8px;">
+        <button onClick="{{ loadSample }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.75);color:#201e1d;">サンプル</button>
+        <label style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;background:#ec3013;color:#fff;">＋ 写真<input type="file" accept="image/*" multiple="multiple" onChange="{{ onFiles }}" style="display:none;"></label>
+      </span>
+    </div>
+    <div style="position:absolute;left:0;right:0;bottom:84px;height:110px;z-index:4;">
+      <sc-for list="{{ strip }}" as="t">
+        <div data-k="{{ t.k }}" onClick="{{ t.tap }}" style="position:absolute;left:{{ t.x }}px;bottom:{{ t.b }}px;width:{{ t.s }}px;height:{{ t.s }}px;border-radius:12px;background-image:{{ t.bgi }};background-size:cover;background-position:{{ t.bp }};opacity:{{ t.op }};box-shadow:{{ t.sh }};transform:scale({{ t.sc }});transition:left .45s ease,width .3s,height .3s,opacity .3s,transform .6s;"></div>
+      </sc-for>
+    </div>
+    <svg width="22" height="22" viewBox="0 0 64 64" style="position:absolute;left:184px;bottom:200px;display:{{ recogDisp }};z-index:5;"><circle cx="32" cy="32" r="26" fill="none" stroke="rgba(32,30,29,.15)" stroke-width="8"></circle><circle cx="32" cy="32" r="26" fill="none" stroke="#201e1d" stroke-width="8" stroke-linecap="round" stroke-dasharray="163.36" stroke-dashoffset="{{ recogOff }}" transform="rotate(-90 32 32)"></circle></svg>
+    <div style="position:absolute;right:18px;bottom:212px;width:112px;height:112px;border-radius:24px;background:#fbfbf9;box-shadow:0 1px 2px rgba(0,0,0,.06),0 8px 22px rgba(30,30,25,.16);overflow:hidden;will-change:transform;z-index:6;">
+      <canvas ref="{{ seedRef }}" width="380" height="380" style="position:absolute;left:0;top:0;width:112px;height:112px;touch-action:none;"></canvas>
+      <div style="position:absolute;left:11px;top:9px;font:500 7px 'IBM Plex Mono',monospace;line-height:1.35;color:#201e1d;pointer-events:none;">seed pack<br><span style="color:#8d8a84;">{{ packDate }}</span></div>
+    </div>
+    <button onClick="{{ gyro }}" style="position:absolute;right:18px;bottom:334px;display:{{ gyroDisp }};display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;height:28px;font-size:11px;border:0;background:rgba(251,251,249,.8);color:#201e1d;z-index:6;">傾けて揺らす</button>
+    <div style="position:absolute;left:18px;right:18px;bottom:{{ botY }}px;display:flex;justify-content:space-between;z-index:5;">
+      <button onClick="{{ savePlant }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.8);color:#201e1d;">植物を保存</button>
+      <button onClick="{{ save }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:#201e1d;color:#f3f2f2;">種パックを保存</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;cycle&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:10,&quot;max&quot;:90,&quot;step&quot;:5,&quot;unit&quot;:&quot;s&quot;,&quot;default&quot;:30,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;动态&quot;},&quot;boxColor&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;accent&quot;,&quot;blue&quot;,&quot;ink&quot;],&quot;default&quot;:&quot;accent&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;画面&quot;},&quot;links&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;all&quot;,&quot;hover&quot;],&quot;default&quot;:&quot;all&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;画面&quot;},&quot;photosBW&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;画面&quot;},&quot;grain&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;画面&quot;}}">
+const INK = '#201e1d';
+const ACTS = {
+  nature: { name: '山・草原', form: 'シダ' },
+  hike: { name: 'ハイキング', form: '低木' },
+  sea: { name: '海', form: '藻' },
+  animal: { name: '動物', form: '花の咲く植物' },
+  food: { name: '食事', form: 'ハーブ' },
+  ride: { name: 'サイクリング', form: '傾いた草' },
+  other: { name: '未分類', form: '草' }
+};
+const SAMPLE = [['p2', '13:48', 'nature'], ['p3', '13:52', 'ride'], ['p4', '15:08', 'food'], ['p5', '16:32', 'ride'], ['p7', '17:21', 'sea'], ['p8', '17:27', 'ride']] // 初回の読み込みを軽くするため 6 枚に
+  .map(r => ({ src: 'photos/' + r[0] + '.jpg', name: r[0], time: r[1], act: r[2] }));
+const h2r = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const r2h = a => '#' + a.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+const mix = (a, b, t) => { const x = h2r(a), y = h2r(b); return r2h(x.map((v, i) => v + (y[i] - v) * t)); };
+const rgba = (h, a) => { const [r, g, b] = h2r(h); return `rgba(${r},${g},${b},${a})`; };
+const hsl = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn; if (!d) return [0, 0, l]; const s = d / (1 - Math.abs(2 * l - 1)); let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return [(h * 60 + 360) % 360, s, l]; };
+const tone = (hex, k, lo, hi) => { const [h, s, l] = hsl(h2r(hex)), S = Math.min(1, s * k), L = Math.min(hi, Math.max(lo, l)); const C = (1 - Math.abs(2 * L - 1)) * S, X = C * (1 - Math.abs((h / 60) % 2 - 1)), m = L - C / 2; const [r, g, b] = h < 60 ? [C, X, 0] : h < 120 ? [X, C, 0] : h < 180 ? [0, C, X] : h < 240 ? [0, X, C] : h < 300 ? [X, 0, C] : [C, 0, X]; return r2h([(r + m) * 255, (g + m) * 255, (b + m) * 255]); };
+const lum = c => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+const rng = s => { let a = s >>> 0 || 1; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+const toMin = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+const fmt = v => { v = ((Math.round(v) % 1440) + 1440) % 1440; return String(Math.floor(v / 60)).padStart(2, '0') + ':' + String(v % 60).padStart(2, '0'); };
+const mixB = (a, b, t) => a.map((c, i) => mix(c, b[i], t));
+const ease = x => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3);
+const SKY_N = 5;
+
+// k-means（按亮度百分位初始化）。点是 [r,g,b, ...附加值]，附加值只求平均不参与距离
+function kmeans(px, k) {
+  const sorted = px.slice().sort((a, b) => lum(a) - lum(b));
+  let C = Array.from({ length: k }, (_, i) => sorted[Math.floor((i + .5) / k * (sorted.length - 1))].slice(0, 3));
+  let S;
+  for (let it = 0; it < 10; it++) {
+    S = C.map(() => new Array(px[0].length + 1).fill(0));
+    px.forEach(p => { let bi = 0, bd = 1e9; C.forEach((c, i) => { const dd = (p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2; if (dd < bd) { bd = dd; bi = i; } }); const s = S[bi]; p.forEach((v, q) => s[q] += v); s[p.length]++; });
+    C = C.map((c, i) => S[i][px[0].length] ? S[i].slice(0, 3).map(v => v / S[i][px[0].length]) : c);
+  }
+  return C.map((c, i) => { const n = S[i][px[0].length]; return { c, n, extra: n ? S[i].slice(3, px[0].length).map(v => v / n) : [] }; });
+}
+
+function analyze(img) {
+  const W = 64, H = Math.max(8, Math.round(64 * img.naturalHeight / img.naturalWidth));
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.drawImage(img, 0, 0, W, H);
+  const d = x.getImageData(0, 0, W, H).data, px = [], grid = [];
+  for (let i = 0; i < d.length; i += 4) px.push([d[i], d[i + 1], d[i + 2]]);
+  const KM = kmeans(px, 5), C = KM.map(o => o.c).sort((a, b) => lum(a) - lum(b));
+  // 基础色调：照片里面积最大的颜色（太暗、太亮的不算）
+  const baseC = (KM.filter(o => lum(o.c) > 45 && lum(o.c) < 235).sort((a, b) => b.n - a.n)[0] || KM.sort((a, b) => b.n - a.n)[0]).c;
+  let ai = 0, best = -1; C.forEach((c, i) => { const [, s, l] = hsl(c); const sc = s * (1 - Math.abs(l - 0.55) * 1.3); if (sc > best) { best = sc; ai = i; } });
+  for (let gy = 0; gy < 12; gy++) for (let gx = 0; gx < 12; gx++) { const X = Math.floor((gx + .5) / 12 * W), Y = Math.floor((gy + .5) / 12 * H), k = (Y * W + X) * 4; grid.push({ u: (gx + .5) / 12, v: (gy + .5) / 12, c: [d[k], d[k + 1], d[k + 2]] }); }
+  // 天空 5 色：画面上半部分里，去掉太暗、过曝和植物绿的像素 → 5 色 k-means → 按在画面里的高度从上到下排
+  const sp = [];
+  for (let r = 0; r < Math.floor(H * .5); r++) for (let q = 0; q < W; q++) {
+    const p = px[r * W + q], L = lum(p); if (L > 248 || L < 45) continue;
+    const [h, sa] = hsl(p); if (h > 60 && h < 170 && sa > .12) continue;
+    sp.push([p[0], p[1], p[2], r / H, q / W]);
+  }
+  let sky = null, skyPos = null;
+  if (sp.length > W * H * .5 * .06) {
+    let cl = kmeans(sp, SKY_N).filter(o => o.n > 0).sort((a, b) => a.extra[0] - b.extra[0]);
+    while (cl.length < SKY_N) cl.push(cl[cl.length - 1]);
+    sky = cl.map(o => r2h(o.c));
+    const big = cl.slice().sort((a, b) => b.n - a.n)[0];
+    skyPos = { v: big.extra[0], u: big.extra[1] };
+  }
+  // 照片指纹：用像素算一个种子，同一张照片永远长出同一株，不同照片各不相同
+  let hash = 2166136261; for (let i = 0; i < d.length; i += 3) { hash ^= d[i]; hash = Math.imul(hash, 16777619); }
+  return { hash: hash >>> 0, base: r2h(baseC), pal: C.map(r2h), sky, skyPos, acc: r2h(C[ai]), accRGB: C[ai], grid, iw: img.naturalWidth, ih: img.naturalHeight };
+}
+
+// 一张照片 → 一株：花色只从这张照片里取
+function flowerColors(a) {
+  if (a.obj && a.objPal && Math.max(...a.objPal.map(c => hsl(h2r(c))[1])) < .16) {
+    const light = a.objPal.slice().sort((x, y) => lum(h2r(y)) - lum(h2r(x)));
+    return [tone(light[0], 1, .78, .92), tone(light[1], 1, .68, .85), tone(light[2], 1, .6, .8)];
+  }
+  const cols = a.obj && a.objPal ? [a.objAcc].concat(a.objPal) : [a.acc].concat(a.pal);
+  const ranked = cols.map(c => { const [h, s, l] = hsl(h2r(c)), cool = h >= 170 && h <= 260 ? .25 : 1; return { c, s: s * (1 - Math.abs(l - .55)) * cool }; }).filter(o => o.s > .02).sort((x, y) => y.s - x.s).map(o => o.c);
+  const uniq = []; ranked.forEach(c => { if (!uniq.some(u => h2r(u).reduce((s, v, q) => s + (v - h2r(c)[q]) ** 2, 0) < 900)) uniq.push(c); });
+  let cl = (uniq.length ? uniq : [a.acc]).slice(0, 5).map(c => tone(c, 1.8, .5, .62));
+  while (cl.length < 3) cl.push(mix(cl[0], '#ffffff', .25 + cl.length * .1));
+  return cl;
+}
+function pickHue(pal, lo, hi, fb) { let b = null, bs = -1; pal.map(h2r).forEach(c => { const [h, s, l] = hsl(c); if (h >= lo && h <= hi && l > .2 && l < .75 && s > bs) { bs = s; b = c; } }); return b ? tone(r2h(b), 1.3, .45, .62) : fb; }
+
+// 物体识别（COCO-SSD，在浏览器里运行）：活动 → 要找的物体
+const OBJ = {
+  ride: ['bicycle', 'motorcycle'],
+  animal: ['bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'bear', 'zebra', 'giraffe', 'elephant'],
+  food: ['pizza', 'sandwich', 'cake', 'donut', 'hot dog', 'bowl', 'cup', 'bottle', 'wine glass', 'banana', 'apple', 'orange', 'broccoli', 'carrot', 'dining table']
+};
+const OBJ_ZH = { person: '人', bicycle: '自転車', motorcycle: 'バイク', bird: '鳥', cat: '猫', dog: '犬', horse: '馬', sheep: '羊', cow: '牛', bear: 'クマ', zebra: 'シマウマ', giraffe: 'キリン', elephant: 'ゾウ', pizza: 'ピザ', sandwich: 'サンドイッチ', cake: 'ケーキ', donut: 'ドーナツ', 'hot dog': 'ホットドッグ', bowl: 'お椀', cup: 'カップ', bottle: 'ボトル', 'wine glass': 'グラス' };
+let detP = null;
+const getDetector = () => detP || (detP = (window.cocoSsd ? cocoSsd.load({ base: 'mobilenet_v2', modelUrl: 'models/coco-ssd/model.json' }) : Promise.reject()).catch(() => null));
+// 小物体（远处的自行车、树上的鸟）整张图里容易漏：整张 + 2×2 重叠切块各识别一次，再合并
+async function detectTiled(det, img) {
+  const W = img.naturalWidth, H = img.naturalHeight, out = [];
+  const tiles = [[0, 0, W, H]];
+  for (let gy = 0; gy < 2; gy++) for (let gx = 0; gx < 2; gx++) tiles.push([gx * W * .4, gy * H * .4, W * .6, H * .6]);
+  const wanted = [].concat(OBJ.ride, OBJ.animal, OBJ.food);
+  for (const [ti, [tx, ty, tw, th]] of tiles.entries()) {
+    if (ti === 1 && out.some(p => wanted.includes(p.class))) break; // 整张就找到了，不用切块
+    const c = document.createElement('canvas'), k = Math.min(1, 640 / Math.max(tw, th)); c.width = Math.round(tw * k); c.height = Math.round(th * k);
+    c.getContext('2d').drawImage(img, tx, ty, tw, th, 0, 0, c.width, c.height);
+    let ps = []; try { ps = await det.detect(c, 20, .3); } catch (e) {}
+    ps.forEach(p => out.push({ ...p, bbox: [tx + p.bbox[0] / k, ty + p.bbox[1] / k, p.bbox[2] / k, p.bbox[3] / k] }));
+  }
+  return out;
+}
+// 场景识别（MobileNet / ImageNet 类别）：海、山・草原
+const SCENE_K = { sea: ['seashore', 'sandbar', 'breakwater', 'promontory', 'pier', 'dock'], nature: ['alp', 'valley', 'volcano', 'cliff', 'lakeside', 'mountain', 'hay', 'rapeseed', 'daisy', 'geyser', 'yellow lady'] };
+let sceneP = null;
+const getScene = async () => null; // MobileNet 已由 CLIP 代替
+async function classifyScene(net, img) {
+  if (!net) return null;
+  let r = []; try { r = await net.classify(img, 5); } catch (e) { return null; }
+  const sum = k => r.filter(o => SCENE_K[k].some(w => o.className.toLowerCase().includes(w))).reduce((a, o) => a + o.probability, 0);
+  const sea = sum('sea'), nat = sum('nature');
+  return sea > .15 && sea >= nat ? 'sea' : nat > .15 ? 'nature' : null;
+}
+// CLIP（零样本图像分类，浏览器本地运行）：比 MobileNet 更准地认出场景和天气；第一次要下载约 90MB 模型，之后浏览器会缓存
+const CLIP_SCENE = [['the sea', '海', 'sea'], ['a river bank', '川辺', 'nature'], ['a pond or lake', '池', 'nature'], ['a grassy field', '草地', 'nature'], ['mountains', '山', 'nature'], ['a forest', '林', 'nature'], ['a park', '公園', 'nature'], ['a city street', '街', null], ['a bicycle', '自転車', 'ride'], ['a bird', '鳥', 'animal'], ['an animal', '動物', 'animal'], ['food on a table', '食べ物', 'food'], ['a picnic', 'ピクニック', 'food']];
+const CLIP_WEATHER = [['a clear blue sky', '晴れ'], ['a cloudy overcast sky', 'くもり'], ['a sunset sky', '夕暮れ'], ['a night sky', '夜']];
+let clipP = null;
+// 模型和运行库都放在本地文件夹 app/lib、app/models（不再从网上下载）
+const getClip = () => clipP || (clipP = import('./lib/transformers/transformers.min.js').then(T => { T.env.allowRemoteModels = true; T.env.allowLocalModels = false; T.env.backends.onnx.wasm.wasmPaths = new URL('lib/transformers/', location.href).href; return T.pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', { dtype: 'q8' }); }).catch(e => { console.warn('CLIP', e); window.__clipErr = String(e && e.stack || e); return null; }));
+window.getClip = () => getClip();
+// 天气：CLIP 分不清晴和阴，所以先看照片天空的颜色——天空是饱和的蓝就是「晴」；暖色的天空或 CLIP 很确定是黄昏/夜时用那个；其余为「阴」
+// 天气：只看照片天空的颜色（上面 3 色）
+function weatherOf(a) {
+  const sk = (a.sky || []).slice(0, 3).map(h => hsl(h2r(h))); if (!sk.length) return '';
+  const L = sk.reduce((t, x) => t + x[2], 0) / sk.length;
+  const all5 = (a.sky || []).map(h => hsl(h2r(h))), blue = sk.filter(([h, s, l]) => h >= 190 && h <= 235 && s > .22 && l > .35 && l < .9).length, warm = all5.filter(([h, s, l]) => (h < 50 || h > 330) && s > .25 && l > .5).length; // 暖色看全部 5 色（夕阳常在天空下部）
+  if (L < .28) return '夜';
+  if (warm >= 1) return '夕暮れ';
+  if (blue >= 2) return '晴れ';
+  return 'くもり';
+}
+async function clipTags(clf, img) {
+  if (!clf) return null;
+  const c = document.createElement('canvas'), k = 336 / Math.max(img.naturalWidth, img.naturalHeight); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  const url = c.toDataURL('image/jpeg', .9);
+  try {
+    const sc = await clf(url, CLIP_SCENE.map(x => 'a photo of ' + x[0]));
+    const s0 = CLIP_SCENE.find(x => 'a photo of ' + x[0] === sc[0].label);
+    return { scene: s0[1], sceneAct: s0[2], sceneP: sc[0].score };
+  } catch (e) { console.warn(e); return null; }
+}
+const best = (preds, list) => preds.filter(p => list.includes(p.class)).sort((x, y) => y.score - x.score)[0];
+// 没有预设活动的照片：按识别结果定活动
+function decideAct(preds, scene) {
+  if (best(preds, OBJ.ride)) return 'ride';
+  if (best(preds, OBJ.animal)) return 'animal';
+  if (best(preds, OBJ.food)) return 'food';
+  if (scene === 'sea') return 'sea';
+  if (scene === 'nature') return best(preds, ['person']) ? 'hike' : 'nature';
+  return 'other';
+}
+// 连线要连到的物体
+const TARGET = { ride: [OBJ.ride, ['person']], animal: [OBJ.animal], food: [OBJ.food, ['person']], hike: [['person']] };
+function pickObject(preds, act) {
+  for (const list of TARGET[act] || []) { const c = best(preds, list); if (c) return { cls: c.class, score: c.score, bbox: c.bbox }; }
+  return null;
+}
+function objColors(img, bb) {
+  const c = document.createElement('canvas'); c.width = c.height = 40; const x = c.getContext('2d');
+  x.drawImage(img, bb[0], bb[1], Math.max(1, bb[2]), Math.max(1, bb[3]), 0, 0, 40, 40);
+  const d = x.getImageData(0, 0, 40, 40).data, px = []; for (let i = 0; i < d.length; i += 4) px.push([d[i], d[i + 1], d[i + 2]]);
+  const C = kmeans(px, 4).map(o => o.c).sort((a, b) => lum(a) - lum(b));
+  let ai = 0, best = -1; C.forEach((c, i) => { const [, s, l] = hsl(c); const sc = s * (1 - Math.abs(l - 0.55) * 1.3) + .001 * l; if (sc > best) { best = sc; ai = i; } });
+  return { objPal: C.map(r2h), objAcc: r2h(C[ai]) };
+}
+
+// 导出用的模糊：浏览器支持 ctx.filter 就用它，否则（Safari）用逐级缩小再放大
+const CAN_FILTER = (() => { try { const x = document.createElement('canvas').getContext('2d'); x.filter = 'blur(2px)'; return x.filter === 'blur(2px)'; } catch (e) { return false; } })();
+function softBlur(src, sigma) {
+  const out = document.createElement('canvas'); out.width = src.width; out.height = src.height; const o = out.getContext('2d');
+  if (CAN_FILTER) { o.filter = `blur(${sigma}px)`; o.drawImage(src, 0, 0); return out; }
+  let cur = src, w = src.width, h = src.height; const steps = [];
+  let f = 1; while (f * 2 <= sigma * 1.2) { f *= 2; w = Math.max(1, Math.round(src.width / f)); h = Math.max(1, Math.round(src.height / f)); const t = document.createElement('canvas'); t.width = w; t.height = h; const x = t.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(cur, 0, 0, w, h); steps.push(t); cur = t; }
+  for (let i = steps.length - 2; i >= 0; i--) { const t = steps[i], x = t.getContext('2d'); x.clearRect(0, 0, t.width, t.height); x.drawImage(cur, 0, 0, t.width, t.height); cur = t; }
+  o.imageSmoothingQuality = 'high'; o.drawImage(cur, 0, 0, out.width, out.height); return out;
+}
+
+// ===== 植物形态的 f：活动 → L-system（公式出自 ABOP, Prusinkiewicz & Lindenmayer 1990） =====
+// 模块写成数组：['F'] 或带参数 ['A', d]。P('F[+X]') 把字符串拆成单字符模块
+const P = s => Array.from(s).map(c => [c]);
+function derive(axiom, rules, n, cap = 90000) {
+  let s = axiom;
+  for (let i = 0; i < n; i++) {
+    const o = [];
+    for (const m of s) { const r = rules[m[0]]; const out = r ? r(m) : null; if (out) for (const x of out) o.push(x); else o.push(m); }
+    if (o.length > cap) break;
+    s = o;
+  }
+  return s;
+}
+// 随机 L-system（ABOP 1.7 节）：每次改写都可能镜像、或少长一个侧枝 → 每株的拓扑结构都不同
+function vary(str, R, drop = .3, flip = .3) {
+  let s = str;
+  if (R() < flip) s = s.replace(/[+-]/g, c => c === '+' ? '-' : '+');
+  if (R() < drop) {
+    const gs = []; let dep = 0, st = -1;
+    for (let i = 0; i < s.length; i++) { if (s[i] === '[') { if (!dep) st = i; dep++; } else if (s[i] === ']') { dep--; if (!dep) gs.push([st, i]); } }
+    if (gs.length > 1) { const [a, b] = gs[Math.floor(R() * gs.length)]; s = s.slice(0, a) + s.slice(b + 1); }
+  }
+  return P(s);
+}
+const v3 = {
+  add: (a, b, k = 1) => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k],
+  rot: (v, ax, an) => { const c = Math.cos(an), s = Math.sin(an), d = v[0] * ax[0] + v[1] * ax[1] + v[2] * ax[2]; const cr = [ax[1] * v[2] - ax[2] * v[1], ax[2] * v[0] - ax[0] * v[2], ax[0] * v[1] - ax[1] * v[0]]; return [0, 1, 2].map(i => v[i] * c + cr[i] * s + ax[i] * d * (1 - c)); }
+};
+// 海龟解释：F 前进画线 / f 前进不画 / + − 左右转 / & ∧ 俯仰 / \ / 翻滚 / | 掉头 / [ ] 分枝 / ! 变细 / ' 换色 / { } 叶片多边形 / Q 之后的多边形算花
+function turtle(mods, deltaDeg, opt = {}) {
+  const Rj = opt.R || (() => .5), J = a => a * (1 + (Rj() - .5) * .4);
+  const d = deltaDeg * Math.PI / 180, segs = [], polys = [], apex = [], st = [];
+  let s = { p: [0, 0, 0], H: [0, 1, 0], L: [-1, 0, 0], U: [0, 0, 1], w: 1, ci: 0, fl: false, dep: 0 }, poly = null;
+  const turn = (ax, an, a, b) => { s[a] = v3.rot(s[a], s[ax], an); s[b] = v3.rot(s[b], s[ax], an); };
+  for (const m of mods) {
+    const c = m[0];
+    if (c === 'F' || c === 'f') {
+      const len = (m.length > 1 ? m[1] : 1) * (poly ? 1 : 1 + (Rj() - .5) * .3), q = v3.add(s.p, s.H, len);
+      if (poly) poly.push(q); else if (c === 'F') segs.push({ a: s.p, b: q, w: s.w, dep: s.dep });
+      s.p = q;
+    }
+    else if (c === '+') turn('U', poly ? d : J(d), 'H', 'L'); else if (c === '-') turn('U', poly ? -d : -J(d), 'H', 'L');
+    else if (c === '&') turn('L', poly ? d : J(d), 'H', 'U'); else if (c === '^') turn('L', poly ? -d : -J(d), 'H', 'U');
+    else if (c === '\\') turn('H', J(d), 'L', 'U'); else if (c === '/') turn('H', -J(d), 'L', 'U');
+    else if (c === '|') turn('U', Math.PI, 'H', 'L');
+    else if (c === '!') s.w *= .72; else if (c === "'") s.ci++; else if (c === 'Q') s.fl = true;
+    else if (c === '[') { st.push(s); s = { ...s, dep: s.dep + 1 }; }
+    else if (c === ']') { s = st.pop() || s; }
+    else if (c === '{') poly = [s.p];
+    else if (c === '}') { if (poly && poly.length > 2) polys.push({ pts: poly, fl: s.fl, ci: s.ci }); poly = null; }
+    else if (opt.apex && opt.apex.includes(c)) apex.push({ p: s.p, H: s.H });
+  }
+  return { segs, polys, apex, cells: [] };
+}
+// 藻类：Anabaena catenula 的细胞分裂（式 1.1），三条丝沿着波浪排开
+function anabaena(R) {
+  // 每条丝从一个细胞开始分裂；每一代每个细胞有 12% 的机会这一代不分裂（随机延迟），所以每条丝长度和排列都不同
+  const cells = [], RULE = { ar: ['al', 'br'], al: ['bl', 'ar'], br: ['ar'], bl: ['al'] }, nf = 2 + Math.floor(R() * 3);
+  for (let k = 0; k < nf; k++) {
+    let s = ['ar']; const gen = 8 + Math.floor(R() * 4);
+    for (let i = 0; i < gen; i++) s = s.flatMap(c => R() < .88 ? RULE[c] : [c]);
+    let y = 0; const lean = (R() - .5) * .6 + (k - (nf - 1) / 2) * .22, ph = R() * 6, amp = 1.5 + R() * 2;
+    s.forEach(c => { const len = c[0] === 'a' ? 1.7 : 1.05; const yy = y + len / 2; cells.push({ x: Math.sin(yy * .09 + ph) * amp * Math.min(1, yy / 30) + lean * yy * .35, y: yy, len, a: c[0] === 'a', k }); y += len + .12; });
+  }
+  return { segs: [], polys: [], apex: [], cells };
+}
+// 每张照片都从公理（ω）开始重新推导：照片指纹 → 随机数 → 迭代次数、分枝角度、每次改写的随机变化都由这张照片决定
+const nOf = (R, n) => n - (R() < .5 ? 1 : 0);
+const LSYS = {
+  // 山・草原 → 蕨类：图 5.11 复叶（参数 L-system，D 顶端延迟，R 节间伸长率）；D 每张照片取 1–3
+  nature: { name: '山・草原', form: 'シダ', src: 'ABOP 图 5.11', tip: 'leaflet', make: R => {
+    const D = 1 + Math.floor(R() * 3), RR = [1.5, 1.25, 1.16][D - 1], n = [13, 19, 25][D - 1] - Math.floor(R() * 3);
+    const A = m => m[1] > 0 ? [['A', m[1] - 1]] : R() < .12 ? [['F', 1], ['['], ['+'], ['A', D], [']'], ['F', 1], ['A', 0]] : [['F', 1], ['['], ['+'], ['A', D], [']'], ['['], ['-'], ['A', D], [']'], ['F', 1], ['A', 0]];
+    return turtle(derive([['A', 0]], { A, F: m => [['F', m[1] * RR]] }, n), 45 * (.8 + R() * .4), { apex: 'A', R }); } },
+  // 徒步 → 灌木：图 1.25
+  hike: { name: 'ハイキング', form: '低木', src: 'ABOP 图 1.25', view: true, make: R => turtle(derive(P('A'), { A: () => vary("[&FL!A]/////'[&FL!A]///////'[&FL!A]", R, .3, 0), F: () => P('S/////F'), S: () => P('FL'), L: () => P("['''^^{-f+f+f-|-f+f+f}]") }, nOf(R, 5)), 22.5 * (.8 + R() * .4), { R }) },
+  // 海 → 藻类：式 1.1 Anabaena catenula
+  sea: { name: '海', form: '藻', src: 'ABOP 式 1.1', make: R => anabaena(R) },
+  // 动物 → 开花植物：图 1.26
+  animal: { name: '動物', form: '花の咲く植物', src: 'ABOP 图 1.26', view: true, make: R => turtle(derive(P('P'), { P: () => vary('I+[P+K]--//[--L]I[++L]-[PK]++PK', R, .25, .3), I: () => P('FS[//&&L][//^^L]FS'), S: () => P('SFS'), L: () => P("['{+f-ff-f+|+f-ff-f}]"), K: () => P("[Q&&&D'/W////W////W////W////W]"), D: () => P('FF'), W: () => P("['^F][{&&&&-f+f|-f+f}]") }, nOf(R, 5)), 18 * (.8 + R() * .4), { R }) },
+  // 饮食 → 香草（迷迭香代用）：图 1.24e
+  food: { name: '食事', form: 'ハーブ', src: 'ABOP 图 1.24e', tip: 'bud', needles: true, make: R => turtle(derive(P('X'), { X: () => vary('F[+X][-X]FX', R, .25, .2), F: () => P('FF') }, nOf(R, 6)), 25.7 * (.8 + R() * .4), { apex: 'X', R }) },
+  // 骑行 → 倾斜的草本：图 1.24f
+  ride: { name: 'サイクリング', form: '傾いた草', src: 'ABOP 图 1.24f', tip: 'bud', make: R => turtle(derive(P('X'), { X: () => vary('F-[[X]+X]+F[+FX]-X', R, .3, .25), F: () => P('FF') }, nOf(R, 5)), 22.5 * (.8 + R() * .4), { apex: 'X', R }) },
+  // 未分类：图 1.24d
+  other: { name: '未分類', form: '草', src: 'ABOP 图 1.24d', tip: 'bud', make: R => turtle(derive(P('X'), { X: () => vary('F[+X]F[-X]+X', R, .3, .3), F: () => P('FF') }, nOf(R, 6)), 20 * (.8 + R() * .4), { apex: 'X', R }) }
+};
+// 把一株画成三张图层底图（茎 / 叶 / 花），只在投入后算一次，之后每帧只贴图
+function plantSprite(g, W, H) {
+  const def = LSYS[g.act] || LSYS.other, R = rng(g.rs), geo = def.make(R);
+  const yaw = def.view ? R() * Math.PI * 2 : 0, cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const pr = p => [p[0] * cy + p[2] * sy, p[1]];
+  const pts = [];
+  geo.segs.forEach(s => { pts.push(pr(s.a), pr(s.b)); }); geo.polys.forEach(q => q.pts.forEach(p => pts.push(pr(p)))); geo.apex.forEach(a => pts.push(pr(a.p)));
+  geo.cells.forEach(c => pts.push([c.x, c.y]));
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity; pts.forEach(([x, y]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); });
+  const bw = Math.max(1e-6, x1 - x0), bh = Math.max(1e-6, y1 - y0), sc = Math.min(g.H / bh, (W * (g.H > 250 ? .5 : .4)) / bw);
+  const baseY = H + 4; let ox = g.x;
+  const lo = g.x + (x0 - 0) * sc, hi = g.x + (x1 - 0) * sc; if (lo < 4) ox += 4 - lo; if (hi > W - 4) ox -= hi - (W - 4);
+  const T = ([x, y]) => [ox + x * sc, baseY - (y - Math.min(0, y0)) * sc];
+  const mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.lineCap = x.lineJoin = 'round'; return [c, x]; };
+  const [stem, sx] = mk(), [leaf, lx] = mk(), [flower, fx] = mk();
+  const heads = [];
+  // 茎
+  sx.strokeStyle = rgba(g.stemCol, .9);
+  geo.segs.forEach(s => { const a = T(pr(s.a)), b = T(pr(s.b)); sx.lineWidth = Math.max(.55, 2.2 * s.w * Math.pow(.8, s.dep)); sx.beginPath(); sx.moveTo(a[0], a[1]); sx.lineTo(b[0], b[1]); sx.stroke(); });
+  // 迷迭香的针叶：每段两侧各一根
+  if (def.needles) { lx.strokeStyle = rgba(g.leafCol, .9); lx.lineWidth = .9; geo.segs.forEach((s, i) => { if (i % 2) return; const a = T(pr(s.a)), b = T(pr(s.b)), dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, nx = -dy / l * 3.2, ny = dx / l * 3.2; [-1, 1].forEach(k => { lx.beginPath(); lx.moveTo(b[0], b[1]); lx.lineTo(b[0] + nx * k + dx / l * 1.5, b[1] + ny * k + dy / l * 1.5); lx.stroke(); }); }); }
+  // 叶片和花瓣（多边形）
+  geo.polys.forEach(q => {
+    const ctx = q.fl ? fx : lx; ctx.fillStyle = q.fl ? rgba(g.cl[q.ci % g.cl.length], .95) : rgba(q.ci ? mix(g.leafCol, g.cl[q.ci % g.cl.length], .4) : g.leafCol, .85);
+    ctx.beginPath(); q.pts.forEach((p, i) => { const t = T(pr(p)); i ? ctx.lineTo(t[0], t[1]) : ctx.moveTo(t[0], t[1]); }); ctx.closePath(); ctx.fill();
+    if (q.fl) { const t = T(pr(q.pts[0])); heads.push(t); }
+  });
+  // 枝端：蕨的小叶 / 花苞
+  geo.apex.forEach((a, i) => {
+    const t = T(pr(a.p)), hd = pr(a.H), ang = Math.atan2(-hd[1], hd[0]);
+    if (def.tip === 'leaflet') { lx.save(); lx.translate(t[0], t[1]); lx.rotate(ang); lx.fillStyle = rgba(mix(g.leafCol, g.cl[0], .45), .9); lx.beginPath(); lx.ellipse(1.5, 0, 3.2, 1.3, 0, 0, Math.PI * 2); lx.fill(); lx.restore(); }
+    else { fx.fillStyle = rgba(g.cl[i % g.cl.length], .95); fx.beginPath(); fx.arc(t[0], t[1], 1.6, 0, Math.PI * 2); fx.fill(); }
+    heads.push(t);
+  });
+  // 藻类的细胞链
+  geo.cells.forEach((c, i) => {
+    const t = T([c.x, c.y]), r = c.len * sc * .5;
+    const ctx = c.a ? fx : lx; ctx.fillStyle = c.a ? rgba(g.cl[c.k % g.cl.length], .9) : rgba(g.leafCol, .9);
+    ctx.beginPath(); ctx.ellipse(t[0], t[1], Math.max(2.4, r * 1.3), Math.max(1.6, r * 1.05), 0, 0, Math.PI * 2); ctx.fill();
+    if (c.a) heads.push(t);
+  });
+  // 连线和光晕落在植物上部的「头」：上部 40% 里花 / 枝端的中心
+  const top = baseY - g.H * .55;
+  const up = heads.filter(h => h[1] < top); const use = up.length ? up : heads;
+  let hx = ox, hy = baseY - bh * sc * .85;
+  if (use.length) { hx = use.reduce((s, h) => s + h[0], 0) / use.length; hy = use.reduce((s, h) => s + h[1], 0) / use.length; }
+  return { stem, leaf, flower, hx, hy, gr: Math.max(14, Math.min(40, bw * sc * .28)), baseX: g.x, baseY };
+}
+
+// ===== 种子：每株一颗平面轮廓的种子，形状来自它的植物种类，颜色来自那张照片 =====
+// 形状画在以 (0,0) 为中心、半径约 r 的范围里；R 是这张照片的随机数，所以同一种类每颗也不一样
+function blobPath(ctx, pts) { // 闭合的平滑曲线（经过各点中点的二次曲线）
+  const n = pts.length; ctx.moveTo((pts[n - 1][0] + pts[0][0]) / 2, (pts[n - 1][1] + pts[0][1]) / 2);
+  for (let i = 0; i < n; i++) { const a = pts[i], b = pts[(i + 1) % n]; ctx.quadraticCurveTo(a[0], a[1], (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); }
+  ctx.closePath();
+}
+const SEED_SHAPE = {
+  // 蕨类：边缘起伏的长叶
+  nature: (c, r, R) => { const k = 7 + Math.floor(R() * 4), pts = []; for (let i = 0; i < k * 2; i++) { const a = i / (k * 2) * Math.PI * 2, w = i % 2 ? .78 : 1; pts.push([Math.cos(a) * r * .62 * w, Math.sin(a) * r * w]); } blobPath(c, pts); },
+  // 灌木：几个圆聚成一团（像树冠）
+  hike: (c, r, R) => { const k = 4 + Math.floor(R() * 3); c.moveTo(r * .55, 0); c.arc(0, 0, r * .55, 0, Math.PI * 2); for (let i = 0; i < k; i++) { const a = i / k * Math.PI * 2 + R(), d = r * .5, rr = r * (.36 + R() * .12); c.moveTo(Math.cos(a) * d + rr, Math.sin(a) * d); c.arc(Math.cos(a) * d, Math.sin(a) * d, rr, 0, Math.PI * 2); } },
+  // 藻类：一串圆珠
+  sea: (c, r, R) => { const k = 3 + Math.floor(R() * 2); for (let i = 0; i < k; i++) { const y = (i - (k - 1) / 2) * r * .62, x = Math.sin(i * 1.7 + R()) * r * .18, rr = r * (.34 + (i % 2) * .08); c.moveTo(x + rr, y); c.arc(x, y, rr, 0, Math.PI * 2); } },
+  // 开花植物：四瓣（或五瓣）的花形
+  animal: (c, r, R) => { const k = R() < .6 ? 4 : 5, pts = []; for (let i = 0; i < k * 2; i++) { const a = i / (k * 2) * Math.PI * 2, w = i % 2 ? .52 : 1.08; pts.push([Math.cos(a) * r * w, Math.sin(a) * r * w]); } blobPath(c, pts); },
+  // 香草：一根细枝两侧长着椭圆小叶
+  food: (c, r, R) => { c.rect(-r * .09, -r, r * .18, r * 2); const k = 3 + Math.floor(R() * 2); for (let i = 0; i < k; i++) { const y = -r * .75 + i * r * 1.5 / (k - 1 || 1), s = i % 2 ? 1 : -1; c.moveTo(s * r * .1, y); c.ellipse(s * r * .38, y - r * .12, r * .32, r * .17, s * -.5, 0, Math.PI * 2); } },
+  // 倾斜的草本：水滴 / 瓶形
+  ride: (c, r, R) => { const t = .25 + R() * .2; c.moveTo(0, -r); c.bezierCurveTo(r * t, -r * .4, r * .78, r * .2, r * .62, r * .7); c.quadraticCurveTo(0, r * 1.15, -r * .62, r * .7); c.bezierCurveTo(-r * .78, r * .2, -r * t, -r * .4, 0, -r); c.closePath(); },
+  // 未分类：一颗圆滚滚的种子
+  other: (c, r, R) => { const pts = []; for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; pts.push([Math.cos(a) * r * (.82 + R() * .2), Math.sin(a) * r * (.9 + R() * .2)]); } blobPath(c, pts); }
+};
+// 种子颜色：花色压平成扁平的色块（参考图那种不透明、略带粉彩的颜色）
+const seedColor = col => col; // 直接用照片的基础色调，不再加工
+
+class SeedBox {
+  constructor(cv) {
+    this.cv = cv; this.ctx = cv.getContext('2d'); this.W = cv.width; this.H = cv.height; this.seeds = []; this.g = [0, 1]; this.drag = null; this.sensor = false; this.off = [0, 0]; this.ov = [0, 0]; this.rot = 0; this.rv = 0; this.pv = [0, 0]; this.po = [0, 0];
+    window.addEventListener('deviceorientation', e => { if (e.gamma == null) return; this.sensor = true; const gx = Math.sin((e.gamma || 0) * Math.PI / 180), gy = Math.sin((e.beta || 0) * Math.PI / 180); this.g = [gx, Math.max(-1, Math.min(1, gy))]; });
+    window.addEventListener('devicemotion', e => { const a = e.acceleration; if (!a || a.x == null) return; const k = Math.hypot(a.x, a.y); if (k > 6) this.kick(-a.x * .6, a.y * .6); });
+  }
+  // 每株一颗；已有的种子保留位置，新的从上方落下
+  set(plants) {
+    const old = new Map(this.seeds.map(s => [s.key, s])), out = [];
+    plants.forEach((p, k) => {
+      const key = p.rs + '|' + p.act, o = old.get(key); if (o) { o.col = seedColor(p.base); o.i = p.i; out.push(o); return; }
+      const R = rng(p.rs ^ 0x9e3779b9), r = (17 + R() * 8) * 2 * Math.min(1, Math.sqrt(8 / Math.max(8, plants.length)));
+      out.push({ key, i: p.i, act: p.act, R: p.rs, r, col: seedColor(p.base), x: 50 + R() * (this.W - 100), y: -r * 2 - k * 50, vx: (R() - .5) * 2, vy: 0, a0: (R() - .5) * .5, a: 0 }); out[out.length - 1].a = out[out.length - 1].a0;
+    });
+    this.seeds = out;
+  }
+  kick(dx, dy) { this.seeds.forEach(s => { s.vx += dx * (.6 + Math.random() * .8); s.vy += dy * (.6 + Math.random() * .8); }); }
+  // 时间步长按真实时间算（不受帧率影响）；不自由旋转：只随横向速度轻轻倾斜，停下后回正
+  step() {
+    const now = performance.now(), dt = Math.min(2, ((now - (this.t || now)) / 16.67) || 1); this.t = now;
+    const gw = this.sensor ? this.g : [0, 1], g = [gw[0] * Math.cos(-this.rot) - gw[1] * Math.sin(-this.rot), gw[0] * Math.sin(-this.rot) + gw[1] * Math.cos(-this.rot)], G = .9 * .8 * dt, W = this.W, H = this.H, air = Math.pow(.982, dt), tt = now / 1000; // 浮力 0.2g：有效重力只剩 0.8g，空气阻力更大
+    // 包本身的运动：放手后像弹簧一样回到原位；包的加速度反向作用在种子上（惯性）
+    if (!this.cardDrag) { this.ov = this.ov.map((v, i) => (v - this.off[i] * .09 * dt) * Math.pow(.8, dt)); this.off = this.off.map((o, i) => o + this.ov[i] * dt); this.rv = (this.rv - this.rot * .09 * dt) * Math.pow(.8, dt); this.rot += this.rv * dt; }
+    const v = this.off.map((o, i) => (o - this.po[i]) / dt), acc = v.map((x, i) => x - this.pv[i]); this.po = this.off.slice(); this.pv = v;
+    const cr = Math.cos(-this.rot), sr = Math.sin(-this.rot), la = [acc[0] * cr - acc[1] * sr, acc[0] * sr + acc[1] * cr];
+    if (Math.hypot(la[0], la[1]) > .05) for (const s of this.seeds) { s.vx -= la[0] * 2.2; s.vy -= la[1] * 2.2; }
+    if (this.onMove) this.onMove(this.off, this.rot);
+    for (const s of this.seeds) {
+      const d = this.drag && this.drag.s === s;
+      if (d) { // 拖着的种子用弹簧跟手，比直接贴着鼠标柔和
+        const tx = this.drag.px + this.drag.dx, ty = this.drag.py + this.drag.dy;
+        s.vx = (tx - s.x) * .35; s.vy = (ty - s.y) * .35;
+      } else { if (s.ph == null) s.ph = Math.random() * 6.28; s.vx = (s.vx + g[0] * G + Math.sin(tt * .9 + s.ph) * .09 * dt) * air; s.vy = (s.vy + g[1] * G + Math.sin(tt * .7 + s.ph * 1.7) * .14 * dt) * air; }
+      s.x += s.vx * dt; s.y += s.vy * dt;
+      const r = s.r * 1.08; s.ground = false;
+      if (s.x < r) { s.x = r; s.vx = Math.abs(s.vx) * .3; } if (s.x > W - r) { s.x = W - r; s.vx = -Math.abs(s.vx) * .3; }
+      if (s.y < r && s.vy < 0) { s.y = r; s.vy = Math.abs(s.vy) * .3; }
+      if (s.y > H - r) { s.y = H - r; s.vy = s.vy > 2 ? -s.vy * .45 : -.6 - Math.random() * .4; s.vx *= Math.pow(.86, dt); s.ground = true; }
+      // 倾斜角：跟着横向速度，平滑过去
+      const target = s.a0 + Math.max(-.5, Math.min(.5, s.vx * .025));
+      s.a += (target - s.a) * .12;
+    }
+    for (let it = 0; it < 4; it++) for (let i = 0; i < this.seeds.length; i++) for (let j = i + 1; j < this.seeds.length; j++) {
+      const a = this.seeds[i], b = this.seeds[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || .01, min = (a.r + b.r) * .85;
+      if (d >= min) continue;
+      const nx = dx / d, ny = dy / d, ia = this.drag && this.drag.s === a ? 0 : 1, ib = this.drag && this.drag.s === b ? 0 : 1, tot = ia + ib || 1, push = (min - d);
+      a.x -= nx * push * ia / tot; a.y -= ny * push * ia / tot; b.x += nx * push * ib / tot; b.y += ny * push * ib / tot;
+      const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+      if (rv < 0) { const k = rv * .6 / tot; a.vx += k * nx * ia; a.vy += k * ny * ia; b.vx -= k * nx * ib; b.vy -= k * ny * ib; }
+    }
+  }
+  draw(hl) {
+    const c = this.ctx; c.clearRect(0, 0, this.W, this.H);
+    for (const s of this.seeds) {
+      c.save(); c.translate(s.x, s.y); c.rotate(s.a); c.globalAlpha = hl != null && hl !== s.i ? .35 : 1;
+      c.fillStyle = s.col; c.beginPath(); (SEED_SHAPE[s.act] || SEED_SHAPE.other)(c, s.r, rng(s.R)); c.fill('nonzero'); c.restore();
+    }
+  }
+  hit(x, y) { for (let i = this.seeds.length - 1; i >= 0; i--) { const s = this.seeds[i]; if (Math.hypot(x - s.x, y - s.y) < s.r) return s; } return null; }
+}
+
+window.plantSprite = plantSprite; // 调试用
+// 版面（1600×936）：左 照片框｜中 植物｜右 种子包
+let PX = -72, PY = 0, PS = .968 * 2; const MOBILE = true, PACK = { x: 260, y: 520, s: 112 }; // 种子包底边与植物框对齐，间距 90
+// 照片放进格子时的裁切：以识别到的物体为中心（没有物体就取画面中心），尽量不把物体裁掉
+function cropOffset(cell, dw, dh, a) {
+  let fx = .5, fy = .5;
+  if (a && a.obj) { const [x, y, w, h] = a.obj.bbox; fx = (x + w / 2) / a.iw; fy = (y + h / 2) / a.ih; }
+  const cl = (v, lo) => Math.min(0, Math.max(lo, v));
+  return [cl(cell.w / 2 - fx * dw, cell.w - dw), cl(cell.h / 2 - fy * dh, cell.h - dh)];
+}
+// ===== 种子包（seedpack）编码：之后交流平台等所有展开都读这个格式。规则见「种子包编码规则_v1.md」 =====
+const SEEDPACK_FORMAT = 'seedpack', SEEDPACK_V = 1, LSYS_V = 1;
+const hex8 = n => (n >>> 0).toString(16).padStart(8, '0');
+function fnv(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+const isoLocal = ms => { const d = new Date(ms), z = -d.getTimezoneOffset(), p = n => String(Math.abs(n)).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}${z >= 0 ? '+' : '-'}${p(z / 60 | 0)}:${p(z % 60)}`; };
+async function buildPack(st, m, comp) {
+  const seeds = m.plants.map(p => {
+    const it = st.items[p.i], a = st.an[p.i] || {}, ms = it.date || new Date('2026-10-03T' + it.time + ':00').getTime(), ct = a.clip;
+    return {
+      id: hex8(p.rs), t: isoLocal(ms), act: p.act,
+      plant: { rule: (LSYS[p.act] || LSYS.other).src.replace('ABOP 图 ', 'ABOP-fig').replace('ABOP 式 ', 'ABOP-eq'), seed: p.rs >>> 0, h: +(p.H / 330).toFixed(3) },
+      color: { base: a.base || null, flower: p.cl.slice(0, 5), stem: p.stemCol, leaf: p.leafCol },
+      sky: a.sky || null,
+      tags: { weather: a.sky ? weatherOf(a) : null, scene: ct ? ct.scene : null, object: a.obj && a.obj.cls !== 'person' ? a.obj.cls : null }
+    };
+  });
+  const times = seeds.map(x => x.t).sort();
+  const body = { day: times[0] ? times[0].slice(0, 10) : null, span: [times[0] || null, times[times.length - 1] || null], seeds };
+  // 种子的主人：第一次使用时在这个浏览器里生成一个随机编号（不需要注册）
+  let owner = null; try { owner = JSON.parse(localStorage.getItem('seedOwner') || 'null'); } catch (e) {}
+  if (!owner) { owner = { id: 'u-' + hex8(Math.random() * 4294967296) , name: null }; try { localStorage.setItem('seedOwner', JSON.stringify(owner)); } catch (e) {} }
+  return { format: SEEDPACK_FORMAT, v: SEEDPACK_V, lsys: LSYS_V, owner, id: 'sp-' + hex8(fnv(seeds.map(x => x.id).join('') + body.day)), created: isoLocal(Date.now()), generator: 'seed-generator m0.1', sample: !!st.sample, ...body };
+}
+// 短码：pack JSON → deflate → base64url，前缀 SP1.（以后可放进二维码或链接）
+async function packToCode(pack) { const bytes = new TextEncoder().encode(JSON.stringify(pack)), cs = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw')), buf = new Uint8Array(await new Response(cs).arrayBuffer()); let b = ''; buf.forEach(x => b += String.fromCharCode(x)); return 'SP1.' + btoa(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+async function codeToPack(code) { const b = atob(code.replace(/^SP1\./, '').replace(/-/g, '+').replace(/_/g, '/')), u = Uint8Array.from(b, c => c.charCodeAt(0)), ds = new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate-raw')); return JSON.parse(await new Response(ds).text()); }
+// 只用种子包就能重新画出植物（交流平台要用的就是这个）
+function plantFromSeed(sd, x, W, H) { return plantSprite({ act: sd.act, x, H: sd.plant.h * 330, rs: sd.plant.seed, cl: sd.color.flower, stemCol: sd.color.stem, leafCol: sd.color.leaf }, W, H); }
+Object.assign(window, { buildPack, packToCode, codeToPack, plantFromSeed, SeedBox, SEED_SHAPE, seedColor });
+class Component extends DCLogic {
+  state = { items: [], an: [], gap: 6, seed: 7, scale: 0.6, hp: null, hg: null, sample: true, busy: false, prog: 0, progText: '' };
+  wrapRef = el => { this.wrap = el; };
+  plantRef = el => { this.pc = el; this.lc = null; };
+  overRef = el => { this.oc = el; };
+  // 种子包：拖四个角＝旋转，拖中间＝移动；松手后回到原位（位置和角度都弹回），里面的种子跟着重力和惯性动
+  seedRef = el => {
+    if (!el || this.sb) return; this.sb = new SeedBox(el); this.sbEl = el; const card = el.parentElement, sb = this.sb;
+    card.style.transformOrigin = '50% 50%';
+    sb.onMove = (off, rot) => { card.style.transform = `translate(${off[0]}px, ${off[1]}px) rotate(${rot}rad)`; };
+    const local = e => { const r = card.getBoundingClientRect(), k = this.state.scale || 1, cx = r.left + r.width / 2, cy = r.top + r.height / 2, dx = (e.clientX - cx) / k, dy = (e.clientY - cy) / k, c = Math.cos(-sb.rot), s = Math.sin(-sb.rot); return { cx, cy, lx: dx * c - dy * s, ly: dx * s + dy * c }; };
+    const isCorner = p => Math.abs(p.lx) > PACK.s / 2 - 46 && Math.abs(p.ly) > PACK.s / 2 - 46;
+    el.addEventListener('pointerdown', e => {
+      const p = local(e); el.setPointerCapture(e.pointerId);
+      if (isCorner(p)) sb.cardDrag = { mode: 'rot', a0: Math.atan2(e.clientY - p.cy, e.clientX - p.cx), r0: sb.rot };
+      else sb.cardDrag = { mode: 'move', cx: e.clientX, cy: e.clientY, o: sb.off.slice() };
+      el.style.cursor = 'grabbing';
+    });
+    el.addEventListener('pointermove', e => {
+      const d = sb.cardDrag;
+      if (!d) { el.style.cursor = isCorner(local(e)) ? 'alias' : 'grab'; return; }
+      if (d.mode === 'move') { const k = this.state.scale || 1; sb.off = [d.o[0] + (e.clientX - d.cx) / k, d.o[1] + (e.clientY - d.cy) / k]; }
+      else { const p = local(e); sb.rot = d.r0 + Math.atan2(e.clientY - p.cy, e.clientX - p.cx) - d.a0; }
+    });
+    const up = () => { sb.cardDrag = null; el.style.cursor = 'grab'; };
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  };
+  gyro = () => { DeviceOrientationEvent.requestPermission().then(r => { if (r === 'granted') this.setState({ gyroOn: true }); }).catch(() => {}); if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(() => {}); };
+  componentDidMount() {
+    window.addEventListener('resize', () => this.fit());
+    // 长按照片 0.6 秒 → 删除这一张，剩下的重新排版
+    const board = () => this.wrap && this.wrap.firstElementChild;
+    const cellAt = e => { const t = e.target && e.target.closest && e.target.closest('[data-k]'); return t ? +t.dataset.k : null; };
+    const cancel = () => { clearTimeout(this._pt); this._pt = null; if (this.state.pressK != null) this.setState({ pressK: null }); };
+    document.addEventListener('pointerdown', e => {
+      if (this.state.busy || e.button) return; const k = cellAt(e); if (k == null) return;
+      this._p0 = [e.clientX, e.clientY]; this.setState({ pressK: k });
+      this._pt = setTimeout(() => { this._pt = null; this.setState({ pressK: null }); this.removePhoto(k); if (navigator.vibrate) navigator.vibrate(30); }, 600);
+    });
+    document.addEventListener('pointermove', e => { if (this._pt && Math.hypot(e.clientX - this._p0[0], e.clientY - this._p0[1]) > 8) cancel(); });
+    document.addEventListener('pointerup', cancel); document.addEventListener('pointercancel', cancel);
+    document.addEventListener('contextmenu', e => { if (cellAt(e) != null) e.preventDefault(); });
+    window.__seed = this;
+    this.fit();
+    if (window.ResizeObserver && this.wrap) { this.ro = new ResizeObserver(() => this.fit()); this.ro.observe(this.wrap); }
+    const g = document.createElement('canvas'); g.width = g.height = 256; const gc = g.getContext('2d'), im = gc.createImageData(256, 256);
+    for (let i = 0; i < im.data.length; i += 4) { const w = Math.random() < .5 ? 0 : 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = w; im.data[i + 3] = Math.random() * 44; }
+    gc.putImageData(im, 0, 0); this.grain = g;
+    this.loadSample();
+    const loop = () => { this.raf = requestAnimationFrame(loop); this.frame(); };
+    loop();
+  }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); this.ro && this.ro.disconnect(); }
+  // 页面锁定为一屏：画板 1600×936 按窗口等比缩放（在 1440×900 的标准网页尺寸下正好铺满），不出现滚动条
+  // スマホ：幅 390 を基準に拡大縮小。高さは画面いっぱい。植物は画面を覆うように置く
+  fit() { const s = window.innerWidth / 390, H = window.innerHeight / s, ps = Math.max(390 / 552, H / 872); PS = ps * 2; PX = (390 - 552 * ps) / 2; PY = (H - 872 * ps) / 2; if (Math.abs(s - this.state.scale) > .001 || Math.abs(H - (this.state.boardH || 0)) > 1) this.setState({ scale: s, boardH: H, plantS: ps }); }
+  setBusy(busy, prog, progText) {
+    this.setState({ busy, prog: prog ?? this.state.prog, progText: progText ?? this.state.progText });
+    if (window.__setBusy) window.__setBusy(busy);
+  }
+  // 投入：replace=true 时替换（示例），否则加到原料区里已有的照片后面，再按拍摄时间重排
+  async ingest(newItems, replace) {
+    if (this._ingesting || !newItems.length) return;
+    this._ingesting = true;
+    const tok = this.tok = Math.random();
+    try {
+    const base = replace || this.state.sample ? [] : this.state.items;
+    const total = newItems.length * 2; let done = 0;
+    // 每一步之后让浏览器先画一帧，进度条才会动
+    const yieldFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+    const tick = async text => { if (tok !== this.tok) return; done++; this.setBusy(true, done / total, text); await yieldFrame(); };
+    this.setBusy(true, 0, `写真を読み込み中 0 / ${newItems.length}`); await yieldFrame();
+    const relabel = list => { list.sort((x, y) => x.date - y.date); list.forEach((it, k) => { it.name = 'p' + (k + 1); }); return list; };
+    // 1) 读图 + 取色（快）
+    for (let j = 0; j < newItems.length; j++) {
+      const it = newItems[j];
+      it.img = await new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = it.src; });
+      if (tok !== this.tok) return;
+      it.an = it.img ? analyze(it.img) : null;
+      await tick(`写真を読み込み中 ${j + 1} / ${newItems.length}`);
+    }
+    let all = relabel(base.concat(newItems.filter(it => it.img)));
+    const failed = newItems.filter(it => !it.img).length;
+    if (!this.t0 || replace) this.t0 = performance.now();
+    this.setState({ items: all, an: all.map(it => it.an), sample: !!replace, busy: false, recog: .02 }); // 照片、植物、种子先显示出来
+    // 2) 物体和场景识别（慢，在后台一张一张进行；右下的小圆环显示进度）
+    const det = await getDetector(), net = newItems.some(it => it.act === 'other') ? await getScene() : null;
+    const clf = await getClip();
+    if (tok !== this.tok) return;
+    for (let j = 0; j < newItems.length; j++) {
+      const it = newItems[j];
+      if (det && it.img && it.an) {
+        const preds = await detectTiled(det, it.img);
+        if (tok !== this.tok) return;
+        const ct = await clipTags(clf, it.img); if (ct) it.an = { ...it.an, clip: ct };
+        if (it.act === 'other') it.act = ct && ct.sceneAct && ct.sceneP > .3 ? ct.sceneAct : decideAct(preds, await classifyScene(net, it.img));
+        const pick = pickObject(preds, it.act);
+        if (pick) it.an = { ...it.an, obj: pick, ...objColors(it.img, pick.bbox) };
+      }
+      if (tok !== this.tok) return;
+      all = all.slice(); this._spr = null; this.setState({ items: all, an: all.map(it => it.an), recog: (j + 1) / newItems.length }); await yieldFrame();
+    }
+    all = all.slice();
+    this._spr = null;
+    this.setState({ items: all, an: all.map(it => it.an) });
+    this.setState({ recog: 0 });
+    this.setBusy(false, 1, failed ? `${failed} 枚読み込めませんでした（HEIC は Safari で入れるか、JPEG に変換してください）` : '');
+    } finally { if (tok === this.tok) this._ingesting = false; }
+  }
+  onFiles = async e => {
+    if (this._ingesting || this.state.busy) return;
+    const fs = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name));
+    if (!fs.length) return;
+    this.setBusy(true, 0, '撮影時刻を読み込み中…');
+    const items = await Promise.all(fs.map(async f => {
+      let d = new Date(f.lastModified);
+      try { if (window.exifr) { const ex = await exifr.parse(f); const x = ex && (ex.DateTimeOriginal || ex.CreateDate); if (x instanceof Date && !isNaN(x)) d = x; } } catch (err) {}
+      return { src: URL.createObjectURL(f), file: f.name, date: d.getTime(), time: String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'), act: 'other' };
+    }));
+    this.ingest(items, false);
+  };
+  removePhoto(k) {
+    const items = this.state.items.filter((_, i) => i !== k);
+    items.forEach((it, j) => { it.name = 'p' + (j + 1); });
+    this._spr = null;
+    this.setState({ items, an: items.map(it => it.an), hp: null, hg: null, sample: this.state.sample && items.length > 0 });
+  }
+  clear = () => { this.tok = Math.random(); this._ingesting = false; this.setBusy(false, 0, ''); this.setState({ items: [], an: [], sample: false, hp: null, hg: null }); };
+  // 植物画 log の保存：植物の絵だけ（角丸、背景の天空ごと）
+  savePlant = async () => {
+    const st = this.state; if (!st.items.length || !st.an.length) return;
+    const K = 4, Wp = 276 * K, Hp = 436 * K, out = document.createElement('canvas'); out.width = Wp; out.height = Hp;
+    const c = out.getContext('2d'); c.beginPath(); c.roundRect(0, 0, Wp, Hp, 30 * K / 1.6); c.clip();
+    const L = this.layers(), blurs = [0, 5, 3, 4, 10, 1.5, 1, 1, 4]; // 保存用：ぼかしを弱くして、どの株も見えるように（ピントの差を小さく）
+    ['base', 'leaf', 'stem', 'flower', 'glow', 'leafS', 'stemS', 'flowerS', 'glowS'].forEach((k, j) => {
+      const src = L[k].canvas, tmp = document.createElement('canvas'), pad = 40; tmp.width = 276 + pad * 2; tmp.height = 436 + pad * 2;
+      tmp.getContext('2d').drawImage(src, pad, pad);
+      const bl = blurs[j] ? softBlur(tmp, blurs[j] / 2) : tmp;
+      c.drawImage(bl, -pad * K, -pad * K, tmp.width * K, tmp.height * K);
+    });
+    c.drawImage(L.grain.canvas, 0, 0, Wp, Hp);
+    const day = st.items[0] && st.items[0].date ? new Date(st.items[0].date) : new Date(), stamp = day.getFullYear() + String(day.getMonth() + 1).padStart(2, '0') + String(day.getDate()).padStart(2, '0');
+    this.dl(out.toDataURL('image/png'), 'plant_' + stamp + '.png');
+  };
+  // 種パックの保存：種パックの画像（.seedpack.png）だけ
+  save = async () => {
+    const st = this.state, m = this.model(); if (!st.items.length || !st.an.length) return;
+    const pack = await buildPack(st, m, this), packPng = await packToPng(pack);
+    this.dl(URL.createObjectURL(packPng), pack.id + '.seedpack.png'); window.__lastPack = pack;
+  };
+  dl(href, name) { const a = document.createElement('a'); a.href = href; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+  loadSample = () => { if (this._ingesting) return; this.setState({ items: [], an: [] }); this.ingest(SAMPLE.map(r => ({ ...r, date: new Date('2026-10-03T' + r.time + ':00').getTime() })), true); };
+  replay = () => { this.t0 = performance.now(); };
+
+  model() {
+    const { items, an, gap, seed } = this.state, key = [items.length, an.length, an.filter(a => a && a.obj).length, items.map(i => i.act).join(''), gap, seed, items[0] && items[0].src].join('|');
+    if (this._k === key) return this._m;
+    const R = rng(seed), n = items.length;
+    const mins = items.map(it => toMin(it.time));
+    const order = items.map((_, i) => i).sort((a, b) => mins[a] - mins[b] || a - b);
+    // 拼贴：切法照旧，但格子按阅读顺序（上→下、左→右）放入按时间排好的照片
+    let cells = n ? [{ x: 54, y: 104, w: 452, h: 732 }] : [];
+    while (cells.length < n) { let bi = 0; cells.forEach((c, i) => { if (c.w * c.h > cells[bi].w * cells[bi].h) bi = i; }); const c = cells.splice(bi, 1)[0], t = .38 + R() * .24; if (c.w > c.h) cells.push({ ...c, w: c.w * t }, { ...c, x: c.x + c.w * t, w: c.w * (1 - t) }); else cells.push({ ...c, h: c.h * t }, { ...c, y: c.y + c.h * t, h: c.h * (1 - t) }); }
+    cells.sort((a, b) => Math.abs(a.y - b.y) < 1 ? a.x - b.x : a.y - b.y);
+    const boxes = [], skyBoxes = [];
+    cells = cells.map((c, i) => {
+      const k = order[i], g = gap / 2, cell = { k, x: c.x + g, y: c.y + g, w: c.w - gap, h: c.h - gap }, a = an[k];
+      if (a) {
+        const sc = Math.max(cell.w / a.iw, cell.h / a.ih), dw = a.iw * sc, dh = a.ih * sc, [ox, oy] = cropOffset(cell, dw, dh, a), bs = Math.max(14, Math.min(22, Math.min(cell.w, cell.h) * .16));
+        let bp = null, bd = 1e9;
+        a.grid.forEach(gp => { const X = cell.x + ox + gp.u * dw, Y = cell.y + oy + gp.v * dh; if (X < cell.x + 8 || X > cell.x + cell.w - bs - 14 || Y < cell.y + 24 || Y > cell.y + cell.h - bs - 4) return; const dd = gp.c.reduce((s, v, q) => s + (v - a.accRGB[q]) ** 2, 0); if (dd < bd) { bd = dd; bp = { x: X - bs / 2, y: Y - bs / 2 }; } });
+        if (!bp) bp = { x: cell.x + cell.w / 2 - bs / 2, y: cell.y + cell.h / 2 - bs / 2 };
+        boxes[k] = { ...bp, w: bs, h: bs }; cell.ox = ox; cell.oy = oy; cell.dw = dw; cell.dh = dh;
+        if (a.obj) {
+          const [ox0, oy0, ow, oh] = a.obj.bbox, f = dw / a.iw;
+          const x0 = Math.max(cell.x + 4, cell.x + ox + ox0 * f), y0 = Math.max(cell.y + 4, cell.y + oy + oy0 * f);
+          const x1 = Math.min(cell.x + cell.w - 4, cell.x + ox + (ox0 + ow) * f), y1 = Math.min(cell.y + cell.h - 4, cell.y + oy + (oy0 + oh) * f);
+          if (x1 - x0 > 8 && y1 - y0 > 8) boxes[k] = { x: x0, y: y0, w: x1 - x0, h: y1 - y0, obj: true, label: (OBJ_ZH[a.obj.cls] || a.obj.cls) + ' ' + Math.round(a.obj.score * 100) + '%' };
+        }
+        if (a.skyPos) {
+          const X = cell.x + ox + a.skyPos.u * dw, Y = cell.y + oy + a.skyPos.v * dh;
+          skyBoxes[k] = { x: Math.min(Math.max(X - bs / 2, cell.x + 6), cell.x + cell.w - bs - 6 - 5 * 9), y: Math.min(Math.max(Y - bs / 2, cell.y + 22), cell.y + cell.h - bs - 6), s: bs };
+        }
+      }
+      return cell;
+    });
+    // 一张照片 → 一株，按时间从左到右
+    const W = 276, all = an.filter(Boolean).flatMap(a => a.pal);
+    const stemAll = pickHue(all, 190, 250, '#5f8fd6'), leafAll = pickHue(all, 70, 170, '#6f9c95');
+    const shrink = Math.min(1, Math.pow(8 / Math.max(n, 1), .35)), pOf = [];
+    const plants = order.map((i, k) => {
+      pOf[i] = k; const a = an[i], act = items[i].act || 'other';
+      return { i, act, x: W * (k + .5) / n + (R() - .5) * W / n * .5, H: 436 * (k % 2 ? .34 + R() * .2 : .66 + R() * .24) * (n > 10 ? .9 : 1), // 高低交错：偶数株高（画面 66–90%），奇数株矮（34–54%）
+        r: (28 + R() * 12) * shrink,
+        cl: a ? flowerColors(a) : ['#f0643c', '#f6a96b', '#7d9be8'],
+        stemCol: a ? pickHue(a.pal, 190, 250, stemAll) : stemAll, leafCol: a ? pickHue(a.pal, 70, 170, leafAll) : leafAll,
+        dir: k < n / 2 ? 1 : -1, ph: R() * 6, base: a && a.base ? a.base : '#a9b0a0', rs: a ? a.hash : Math.floor(R() * 1e9) };
+    });
+    // 图例：活动 → 形态 ×株数
+    const legend = []; plants.forEach(p => { let g = legend.find(x => x.act === p.act); if (!g) { g = { act: p.act, n: 0, c: p.cl[0] }; legend.push(g); } g.n++; });
+    // 天空关键帧：每张照片 5 色，缺的用时间上最近的照片补
+    let keys = order.map(i => ({ i, min: mins[i], b: an[i] && an[i].sky ? an[i].sky : null }));
+    keys.forEach((k, j) => { if (k.b) return; for (let d = 1; d < keys.length; d++) { const a = keys[j - d], b = keys[j + d]; if (a && a.b) { k.b = a.b; break; } if (b && b.b) { k.b = b.b; break; } } if (!k.b) k.b = ['#8fb0d6', '#a6bfdc', '#b7cbe0', '#cbd8e6', '#dde5ec']; });
+    keys = keys.map(k => ({ i: k.i, min: k.min, raw: k.b, b: k.b.map((c, j) => mix(tone(c, .85, .55, .82), '#f3f1ee', .4 + j * .05)) }));
+    this._k = key;
+    this._m = { cells, boxes, skyBoxes, plants, pOf, legend, mins, keys };
+    return this._m;
+  }
+  // 自动切换：在每张照片的天空停 4.5 秒（这一株清晰），用 2.5 秒过渡到下一张；最后经过夜晚回到第一张
+  skyNow(m, el) {
+    const K = m.keys; if (!K.length) return { c: 0, b: ['#c9d3de', '#d3dbe4', '#dde3ea', '#e6eaef', '#eef0f2'], day: false, w: [] };
+    const HOLD = 4.5, MOVE = 2.5, NIGHT = 7, n = K.length, total = n * HOLD + (n - 1) * MOVE + NIGHT;
+    let t = ((el % total) + total) % total;
+    for (let i = 0; i < n; i++) {
+      if (t < HOLD) return { c: K[i].min, b: K[i].b, day: true, w: [{ i: K[i].i, a: 1 }] };
+      t -= HOLD;
+      if (i < n - 1) { if (t < MOVE) { const e = ease(t / MOVE) * .5 + (1 - Math.pow(1 - t / MOVE, 2)) * .0, q = (1 - Math.cos(Math.PI * t / MOVE)) / 2; return { c: K[i].min + (K[i + 1].min - K[i].min) * q, b: mixB(K[i].b, K[i + 1].b, q), day: true, w: [{ i: K[i].i, a: 1 - q }, { i: K[i + 1].i, a: q }] }; } t -= MOVE; }
+    }
+    const w = t / NIGHT, last = K[n - 1].b, night = last.map(x => mix(x, '#1c2232', .62)), m0 = K[0].min, m1 = K[n - 1].min;
+    return { c: m1 + (m0 + 1440 - m1) * w, b: w < .5 ? mixB(last, night, ease(w * 2)) : mixB(night, K[0].b, ease((w - .5) * 2)), day: false, w: [] };
+  }
+  layers() {
+    if (this.lc || !this.pc) return this.lc;
+    const cs = this.pc.querySelectorAll('canvas'); if (cs.length < 10) return null;
+    const [base, leaf, stem, flower, glow, leafS, stemS, flowerS, glowS, grain] = Array.from(cs).map(c => c.getContext('2d'));
+    this.lc = { base, leaf, stem, flower, glow, leafS, stemS, flowerS, glowS, grain };
+    return this.lc;
+  }
+  frame() {
+    const m = this.model(), now = performance.now(), t = now / 1000, el = this.t0 ? (now - this.t0) / 1000 : 0, P = Math.max(8, this.props.cycle ?? 30);
+    const ready = this.state.an.length > 0, sk = this.skyNow(m, ready ? el : 0);
+    const { hp, hg } = this.state;
+    const cur = (sk.w || []).filter(o => o.a >= .5)[0], ak = cur ? cur.i : null; if (ak !== this.state.autoK) this.setState({ autoK: ak });
+    // 鼠标放在照片或植物上：天空渐变到那张照片的颜色，并高亮那张照片
+    const hov = hp != null ? hp : hg != null && m.plants[hg] ? m.plants[hg].i : null;
+    this._hm = Math.max(0, Math.min(1, (this._hm || 0) + (hov != null ? .08 : -.06))); if (hov != null) this._hi = hov;
+    if (this._hm > 0 && this._hi != null) { const K = m.keys.find(k => k.i === this._hi); if (K) { const e = ease(this._hm); sk.b = mixB(sk.b, K.b, e); sk.w = [{ i: this._hi, a: e }].concat((sk.w || []).filter(o => o.i !== this._hi).map(o => ({ i: o.i, a: o.a * (1 - e) }))); sk.day = true; } }
+    const pulse = i => { if (!sk.day) return 0; const d = (sk.c - m.mins[i]) / 9; return Math.exp(-d * d); };
+    const L = this.layers();
+    if (L) {
+      const W = 276, H = 436;
+      Object.values(L).forEach(x => { x.globalAlpha = 1; x.clearRect(0, 0, x.canvas.width, x.canvas.height); x.lineCap = x.lineJoin = 'round'; });
+      // 背景：天空 5 色渐变（从上到下）
+      const g0 = L.base.createLinearGradient(0, 0, 0, H);
+      sk.b.forEach((c, j) => g0.addColorStop([0, .22, .45, .7, .9][j], c)); g0.addColorStop(1, mix(sk.b[4], '#ffffff', .35));
+      L.base.fillStyle = g0; L.base.fillRect(0, 0, W, H);
+      // 植物：各部分画在不同的层上，层本身用 CSS blur 做柔焦（Safari 也能用）
+      const blurSet = { leaf: L.leaf, stem: L.stem, flower: L.flower, glow: L.glow }, sharpSet = { leaf: L.leafS, stem: L.stemS, flower: L.flowerS, glow: L.glowS };
+      if (ready) m.plants.forEach((g, gi) => {
+        const key = [g.i, g.act, g.x, g.H, g.rs, g.cl.join(), g.stemCol, g.leafCol].join('|');
+        this._spr = this._spr || new Map(); let sp = this._spr.get(key); if (!sp) { sp = plantSprite(g, W, H); this._spr.set(key, sp); }
+        g.e = 1;
+        const pu = pulse(g.i), dim = hg != null && hg !== gi ? .35 : 1;
+        // 背景走到这张照片的天空时，这一株从模糊变清晰
+        const wk = (sk.w || []).find(o => o.i === g.i), f = hg === gi ? 1 : wk ? ease(wk.a) : 0;
+        const rot = Math.sin(t * .5 + g.ph) * .025;
+        const put = (Ls, al) => {
+          if (al < .01) return;
+          [['leaf', sp.leaf], ['stem', sp.stem], ['flower', sp.flower]].forEach(([k, cv]) => { const x = Ls[k]; x.save(); x.globalAlpha = al; x.translate(sp.baseX, sp.baseY); x.rotate(rot); x.translate(-sp.baseX, -sp.baseY); x.drawImage(cv, 0, 0); x.restore(); });
+          // （花头后面的光晕已去掉）
+        };
+        put(blurSet, (1 - f) * dim); put(sharpSet, f * dim);
+        g.hx = sp.hx; g.hy = sp.hy;
+      });
+      if (this.props.grain ?? true) { const ox = Math.random() * 256, oy = Math.random() * 256, x = L.grain; x.save(); x.translate(-ox, -oy); x.fillStyle = x.createPattern(this.grain, 'repeat'); x.fillRect(0, 0, 552 + 256, 872 + 256); x.restore(); }
+    }
+    if (this.oc) {
+      const c = this.oc.getContext('2d'); c.setTransform(2, 0, 0, 2, 0, 0); c.clearRect(0, 0, 390, 1000); c.globalAlpha = 1;
+      // 選ばれた写真（帯の中の大きい1枚）から、その植物の花まで線を引く
+      const fk = hp != null ? hp : this.state.autoK, g = fk != null ? m.plants[m.pOf[fk]] : null, el = fk != null && this.wrap ? this.wrap.querySelector(`[data-k="${fk}"]`) : null;
+      if (g && g.hx != null && el && ready) {
+        const r = el.getBoundingClientRect(), w = this.wrap.getBoundingClientRect(), k = this.state.scale, sx = (r.left + r.width / 2 - w.left) / k, sy = (r.top - w.top) / k - 4;
+        const hx = PX + g.hx * PS, hy = PY + g.hy * PS;
+        c.strokeStyle = '#ec3013'; c.lineWidth = 1.5; c.setLineDash([4, 5]); c.beginPath(); c.moveTo(sx, sy); c.bezierCurveTo(sx, sy - 80, hx, hy + 80, hx, hy); c.stroke(); c.setLineDash([]);
+        c.fillStyle = '#ec3013'; c.fillRect(hx - 4, hy - 4, 8, 8);
+        const word = this.tagOf(fk); if (word) { c.font = '500 12px "Noto Sans JP", sans-serif'; c.textAlign = 'left'; c.fillText(word, Math.min(300, (sx + hx) / 2 + 10), (sy + hy) / 2); }
+      }
+      c.globalAlpha = 1;
+    }
+    this.seedFrame(m, hp != null ? hp : hg != null && m.plants[hg] ? m.plants[hg].i : null);
+  }
+  seedFrame(m, hl) {
+    if (!this.sb) return;
+    const key = m.plants.map(p => p.i + ':' + p.rs + ':' + p.act + ':' + p.base).join('|');
+    if (key !== this._seedKey) { this._seedKey = key; this.sb.set(this.state.an.length ? m.plants : []); }
+    // 电脑上没有重力感应：鼠标在种子栏里的位置当作「倾斜」
+    this.sb.step(); this.sb.draw(hl);
+  }
+  onMove = e => {
+    if (!this.wrap) return;
+    const r = this.wrap.getBoundingClientRect(), s = this.state.scale, X = (e.clientX - r.left) / s, Y = (e.clientY - r.top) / s, m = this.model();
+    let hp = null, hg = null;
+    m.cells.forEach(c => { if (X >= c.x && X <= c.x + c.w && Y >= c.y && Y <= c.y + c.h) { hp = c.k; hg = m.pOf[c.k]; } });
+    if (hp == null && this.sb) { const o = this.sb.off || [0, 0], sx = (X - PACK.x - o[0]) * 2, sy = (Y - PACK.y - o[1]) * 2; if (sx > 0 && sy > 0 && sx < 380 && sy < 380) { const sd = this.sb.hit(sx, sy); if (sd) { hp = sd.i; hg = m.pOf[sd.i]; } } }
+    if (hp == null) { let bd = 70; m.plants.forEach((g, gi) => { if (g.hx == null) return; const d = Math.hypot(X - (PX + g.hx * PS), Y - (PY + g.hy * PS)); if (d < bd) { bd = d; hg = gi; } }); }
+    if (hp !== this.state.hp || hg !== this.state.hg) this.setState({ hp, hg });
+  };
+  onLeave = () => { if (this.state.hp != null || this.state.hg != null) this.setState({ hp: null, hg: null }); };
+
+  // 植物下方的关键词：天气（来自天空色）＋识别到的物体和场景
+  whatOf(i) {
+    const a = this.state.an[i]; if (!a) return '';
+    return a.obj && a.obj.cls !== 'person' ? (OBJ_ZH[a.obj.cls] || a.obj.cls) : a.clip ? a.clip.scene : '';
+  }
+  tagOf(i) {
+    const a = this.state.an[i]; if (!a) return '';
+    const obj = a.obj && a.obj.cls !== 'person' ? (OBJ_ZH[a.obj.cls] || a.obj.cls) : null, ct = a.clip;
+    const what = obj || (ct ? ct.scene : null); const parts = [weatherOf(a), what].filter(Boolean);
+    return parts.join(' · ');
+  }
+  tagWords(m) {
+    const st = this.state; if (!st.an.length) return [];
+    const words = [], add = w => { if (w && !words.includes(w)) words.push(w); };
+    const sk = m.keys.flatMap(k => k.raw.slice(0, 2)).map(h => hsl(h2r(h))), sat = sk.reduce((a, x) => a + x[1], 0) / sk.length, warm = sk.filter(x => x[0] < 50 && x[1] > .2).length / sk.length;
+    add(warm > .25 ? '夕方' : sat > .22 ? '晴れ' : 'くもり');
+    const SW = { nature: '草地', sea: '海', hike: 'ハイキング' };
+    m.plants.forEach(p => { const a = st.an[p.i]; if (SW[p.act]) add(SW[p.act]); if (a && a.obj && a.obj.cls !== 'person') add(OBJ_ZH[a.obj.cls] || a.obj.cls); });
+    const R = rng(words.join('').length * 977 + words.length);
+    return words.map((t, k) => ({ t, f: 15 + Math.round(R() * 5), x: Math.round(548 + R() * 150), y: Math.round(420 + (k % 5) * 30 + R() * 12) }));
+  }
+  renderVals() {
+    const st = this.state, m = this.model(), items = st.items, an = st.an;
+    const cells = m.cells.map(c => { const fk = st.hp != null ? st.hp : st.hg != null && m.plants[st.hg] ? m.plants[st.hg].i : st.autoK, mine = fk == null || c.k === fk; return { x: c.x - 40, y: c.y - 90, w: c.w, h: c.h, bs: c.dw ? `${c.dw}px ${c.dh}px` : 'cover', bp: c.dw ? `${c.ox}px ${c.oy}px` : 'center', bgi: 'url("' + items[c.k].src + '")', label: items[c.k].name + ' · ' + items[c.k].time, op: mine ? 1 : .5, sc: st.pressK === c.k ? .86 : 1, tr: st.pressK === c.k ? '.6s ease-in' : '.2s' }; });
+    const acts = m.legend.map(g => ({ name: (ACTS[g.act] || ACTS.other).name, form: (ACTS[g.act] || ACTS.other).form, n: g.n, c: an.length ? g.c : 'var(--color-neutral-300)' }));
+    const seedBlobs = an.length ? m.plants.map(p => p.cl[0]).slice(0, 6).map((c, i) => ({ x: 86 + (i % 2) * 40, y: 22 + i * 20, r: 64, c })) : [];
+    return {
+      cells, acts, seedBlobs,
+      photoFilter: (this.props.photosBW ?? false) ? 'grayscale(1)' : 'none',
+      scale: st.scale, stageW: Math.floor(1600 * st.scale), stageH: Math.floor(936 * st.scale), wrapRef: this.wrapRef, plantRef: this.plantRef, overRef: this.overRef,
+      tags: this.tagWords(m), packDate: (() => { const d = st.items[0] && st.items[0].date ? new Date(st.items[0].date) : null; return d ? d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0') + ' · ' + st.items.length : '—'; })(),
+      boardH: Math.ceil(st.boardH || 844), plantS: st.plantS || .968, plantL: PX, plantT: PY, topY: 52, botY: 30,
+      strip: (() => { // 写真の帯：撮影順。選ばれた写真が真ん中に来るように並べる
+        const fk = st.hp != null ? st.hp : st.autoK, ord = m.plants.map(p => p.i), n = ord.length, ci = Math.max(0, ord.indexOf(fk)), S = 60, B = 84, G = 8;
+        let x = 195 - B / 2 - ord.slice(0, ci).length * (S + G);
+        return ord.map((i, j) => { const on = i === fk, sz = on ? B : S, it = { k: i, x: Math.round(x), b: on ? 14 : 0, s: sz, bgi: 'url("' + items[i].src + '")', bp: (() => { const a = an[i]; if (!a || !a.obj) return 'center'; const [x, y, w, h] = a.obj.bbox; return `${Math.round((x + w / 2) / a.iw * 100)}% ${Math.round((y + h / 2) / a.ih * 100)}%`; })(), op: fk == null || on ? 1 : .6, sh: on ? '0 0 0 2.5px #fff, 0 6px 16px rgba(0,0,0,.22)' : '0 2px 6px rgba(0,0,0,.12)', sc: st.pressK === i ? .82 : 1, tap: () => this.setState({ hp: st.hp === i ? null : i, hg: st.hp === i ? null : m.pOf[i] }) }; x += sz + G; return it; });
+      })(),
+      onMove: this.onMove, onLeave: this.onLeave, seedRef: this.seedRef, savePlant: this.savePlant, gyro: this.gyro, gyroDisp: window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && navigator.maxTouchPoints > 0 && !st.gyroOn ? 'block' : 'none', clear: this.clear, save: this.save, hintDisp: items.length && !st.busy ? 'block' : 'none', recogDisp: st.recog ? 'block' : 'none', recogOff: (163.36 * (1 - (st.recog || 0))).toFixed(1), emptyDisp: items.length || st.busy ? 'none' : 'flex', progDisp: st.busy ? 'flex' : 'none', progW: Math.round((st.prog || 0) * 100) + '%', progOff: (163.36 * (1 - (st.prog || 0))).toFixed(1), progText: st.progText, noteDisp: !st.busy && st.progText ? 'block' : 'none'
+    };
+  }
+}
+</script>
+</body>
+</html>

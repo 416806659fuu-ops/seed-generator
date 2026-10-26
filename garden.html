@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>種の庭</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;1,300&family=Noto+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #f3f2f2; font-family: Jost, "Noto Sans JP", "Noto Sans SC", sans-serif; color: #201e1d; user-select: none; }
+  #board { position: absolute; left: 0; top: 0; width: 1600px; height: 936px; transform-origin: 0 0; }
+  #cv { position: absolute; left: 0; top: 0; width: 1600px; height: 936px; cursor: grab; touch-action: none; }
+  #month { position: absolute; left: 60px; bottom: 50px; font: 300 30px Jost, "Noto Sans JP", "Noto Sans SC", sans-serif; }
+  #hint { position: absolute; left: 60px; bottom: 30px; font: 400 12px 'IBM Plex Mono', 'Noto Sans SC', monospace; color: #8d8a84; }
+  #tray { position: absolute; z-index: 5; right: 50px; top: 60px; width: 210px; display: flex; flex-direction: column; gap: 18px; }
+  .card { position: relative; width: 190px; height: 190px; border-radius: 30px; background: #fbfbf9; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 10px 28px rgba(30,30,25,.12); cursor: grab; touch-action: none; transition: opacity .3s; }
+  .card canvas { position: absolute; left: 0; top: 0; width: 190px; height: 190px; pointer-events: none; }
+  .card .lb { position: absolute; left: 18px; top: 15px; font: 500 11px 'IBM Plex Mono', monospace; line-height: 1.35; pointer-events: none; }
+  .card .lb span { color: #8d8a84; }
+  .card.empty { opacity: .35; }
+  .card.dragging { z-index: 50; cursor: grabbing; transition: none; }
+  .card canvas { pointer-events: none; }
+  #btns { position: absolute; left: 60px; top: 50px; display: flex; gap: 10px; }
+  .pill { height: 38px; padding: 0 22px; border-radius: 19px; font: 500 14px "IBM Plex Mono", "Noto Sans JP", "Noto Sans SC", monospace; cursor: pointer; border: 1.5px solid #201e1d; background: transparent; color: #201e1d; display: flex; align-items: center; }
+  .pill.dark { background: #201e1d; color: #f3f2f2; border: 0; }
+  #msg { position: absolute; right: 50px; top: 20px; font: 400 14px "Noto Sans JP", "Noto Sans SC"; color: #a0532e; z-index: 60; }
+  #trayHint { font: 400 12px 'IBM Plex Mono', 'Noto Sans SC', monospace; color: #8d8a84; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div id="skybg" style="position:fixed;inset:0;opacity:0;pointer-events:none;"></div>
+<div id="board">
+  <canvas id="cv" width="3200" height="1872"></canvas>
+  <div id="btns">
+    <label class="pill dark">種パックを入れる<input id="file" type="file" accept=".png,.json,image/png,application/json" multiple hidden></label>
+    <button class="pill" id="sampleA">サンプル A</button>
+    <button class="pill" id="sampleB">サンプル B</button>
+    <button class="pill" id="clearAll">クリア</button>
+  </div>
+  <div id="msg"></div>
+  <div id="tray"></div>
+</div>
+
+<script src="lib/seedcore_lsys1.js"></script>
+<script src="lib/seedpack_png.js"></script>
+<script>
+// ===== 种子花园 v0.3：透视的地面；种子包先放在旁边，由每个人自己拖到地面上撒 =====
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d'), CW = 1600, CH = 936, DPR = 2;
+const MONTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+// ---------- 透视相机（有消失点） ----------
+// 地面是边长 1 的正方形，中心在原点；相机在距离 R、仰角 elev 处看着中心
+const cam = { yaw: .5, elev: 32 * Math.PI / 180, R: 1.75, F: 1080, vyaw: 0, zoom: 1 };
+const C0 = { x: 800, y: 500 };
+function proj(u, v, h = 0) {
+  const x = u - .5, y = v - .5, c = Math.cos(cam.yaw), s = Math.sin(cam.yaw), X = x * c - y * s, Z = x * s + y * c, e = cam.elev;
+  const depth = cam.R - h * Math.sin(e) - Z * Math.cos(e), up = h * Math.cos(e) - Z * Math.sin(e), k = cam.F * cam.zoom / depth;
+  return [C0.x + X * k, C0.y - up * k, depth, k];
+}
+// 画面上的点 → 地面上的 (u,v)（撒种子用）
+function unproj(sx, sy) {
+  const e = cam.elev, F = cam.F * cam.zoom, a = (sy - C0.y) / F, Z = a * cam.R / (Math.sin(e) + a * Math.cos(e)), depth = cam.R - Z * Math.cos(e), X = (sx - C0.x) * depth / F;
+  if (depth <= .1) return null;
+  const c = Math.cos(cam.yaw), s = Math.sin(cam.yaw), x = X * c + Z * s, y = -X * s + Z * c;
+  return [x + .5, y + .5];
+}
+
+// ---------- 状态 ----------
+// 每个人一种笔触颜色（按来到花园的先后分配）
+const OWNER_COLS = ['#d9734e', '#4f86c6', '#d6a833', '#7a9e5a', '#a8679e', '#3f9c96', '#c45b6b', '#7d6fb8'];
+const owners = new Map(); // owner id → 颜色
+const ownerOf = pack => (pack.owner && pack.owner.id) || ('pack-' + pack.id);
+const ownerCol = oid => { if (!owners.has(oid)) owners.set(oid, OWNER_COLS[owners.size % OWNER_COLS.length]); return owners.get(oid); };
+const packs = [];   // { pack, left: 还没撒的种子, el }
+const items = [];   // 撒到地上的种子
+
+function fit() { const s = Math.min(innerWidth / 1600, innerHeight / 936), b = document.getElementById('board'); b.style.transform = `translate(${(innerWidth - 1600 * s) / 2}px, ${(innerHeight - 936 * s) / 2}px) scale(${s})`; }
+addEventListener('resize', fit); fit();
+const boardScale = () => document.getElementById('board').getBoundingClientRect().width / 1600;
+const toBoard = (cx, cy) => { const r = document.getElementById('board').getBoundingClientRect(), k = r.width / 1600; return [(cx - r.left) / k, (cy - r.top) / k]; };
+function say(t) { const m = document.getElementById('msg'); m.textContent = t; clearTimeout(say.t); say.t = setTimeout(() => m.textContent = '', 2600); }
+
+// ---------- 种子包放到旁边待机 ----------
+function addPack(pack) {
+  if (!pack || pack.format !== 'seedpack') return say('種パックのファイルではありません');
+  if (pack.lsys !== 1) return say('この種パックの描画バージョン（lsys ' + pack.lsys + '）には対応していません');
+  const same = packs.find(p => p.pack.id === pack.id);
+  if (same) { // 同一个种子包：撒完了就重新装满；还没撒完就提示
+    if (same.left.length) return say('この種パックはすでに右側にあります（まだ ' + same.left.length + ' 粒）');
+    same.left = pack.seeds.slice(); same.bySeed = new Map(same.left.map(sd => [sd.plant.seed + '|' + sd.act, sd]));
+    same.sb.set(same.left.map(sd => ({ i: sd.id, rs: sd.plant.seed, act: sd.act, base: sd.color.base || '#9aa090', cl: sd.color.flower }))); drawCard(same); return say('種パックを補充しました');
+  }
+  const P = { pack, left: pack.seeds.slice(), oid: ownerOf(pack) }; P.col = ownerCol(P.oid);
+  const el = document.createElement('div'); el.className = 'card';
+  el.innerHTML = `<canvas width="380" height="380"></canvas><i style="position:absolute;right:18px;top:17px;width:10px;height:10px;border-radius:50%;background:${P.col}"></i><div class="lb">seed pack<br><span>${pack.day ? pack.day.replace(/-/g, '.') : ''} · <b class="n">${pack.seeds.length}</b></span></div>`;
+  P.el = el; packs.push(P); document.getElementById('tray').appendChild(el); drawCard(P); bindCard(P);
+}
+// 卡片里：用种子生成器的重力效果（SeedBox：0.2g 浮力、碰撞、惯性），种子在包里晃
+function drawCard(P) { P.el.querySelector('.n').textContent = P.left.length; P.el.classList.toggle('empty', !P.left.length); }
+function bindCard(P) {
+  const el = P.el, cvs = el.querySelector('canvas'), sb = new SeedBox(cvs); P.sb = sb;
+  const toPlant = sd => ({ i: sd.id, rs: sd.plant.seed, act: sd.act, base: sd.color.base || '#9aa090', cl: sd.color.flower });
+  P.bySeed = new Map(P.left.map(sd => [sd.plant.seed + '|' + sd.act, sd]));
+  sb.set(P.left.map(toPlant));
+  sb.onMove = (off, rot) => { el.style.transform = `translate(${off[0]}px, ${off[1]}px) rotate(${rot}rad)`; };
+  let drag = null;
+  el.addEventListener('pointerdown', e => { if (!P.left.length) return; try { el.setPointerCapture(e.pointerId); } catch (err) {} drag = { x: e.clientX, y: e.clientY, o: sb.off.slice() }; sb.cardDrag = drag; el.classList.add('dragging'); });
+  el.addEventListener('pointermove', e => { if (!drag) return; const k = boardScale(); sb.off = [drag.o[0] + (e.clientX - drag.x) / k, drag.o[1] + (e.clientY - drag.y) / k]; });
+  const up = () => { if (!drag) return; drag = null; sb.cardDrag = null; el.classList.remove('dragging'); };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  P.tick = now => {
+    // 包的中心在不在地面上方
+    const r = el.getBoundingClientRect(), [bx, by] = toBoard(r.left + r.width / 2, r.top + r.height / 2), g = unproj(bx, by + 140) || [-1, -1];
+    const over = drag && g[0] > -.05 && g[0] < 1.05 && g[1] > -.05 && g[1] < 1.05;
+    // 在地面上方停留时慢慢倾斜（最多约 115°），移开就回正；回正由 SeedBox 的弹簧负责
+    if (drag) sb.rot += ((over ? -2 : 0) - sb.rot) * (over ? .012 : .12); // 倾斜得慢一点，让人能控制撒多少
+    sb.step(); sb.draw(null);
+    // 左边开口：种子滑到左边、而且重力朝左时，就从包里掉出去
+    const gx = -Math.sin(-sb.rot); // 包坐标里重力的横向分量（负＝朝左）
+    if (!over || gx > -.35 || now - (P.lastOut || 0) < 170) return;
+    const sd0 = sb.seeds.filter(x => x.x < x.r * 1.6).sort((a, b) => a.x - b.x)[0]; if (!sd0) return;
+    P.lastOut = now; sb.seeds.splice(sb.seeds.indexOf(sd0), 1);
+    const sd = P.bySeed.get(sd0.key); P.left.splice(P.left.indexOf(sd), 1); drawCard(P);
+    // 掉出去的位置（包的左边）换算到画面坐标
+    const lx = sd0.x / 2 - 95, ly = sd0.y / 2 - 95, c = Math.cos(sb.rot), s = Math.sin(sb.rot), hx = (r.left + r.width / 2), hy = (r.top + r.height / 2), k = boardScale();
+    const [ex, ey] = toBoard(hx + (lx * c - ly * s) * k, hy + (lx * s + ly * c) * k);
+    const tgt = unproj(ex, ey + 90 + Math.random() * 60) || [.5, .5];
+    sow(sd, Math.min(.97, Math.max(.03, tgt[0])), Math.min(.97, Math.max(.03, tgt[1])), ex, ey, now, sd0.vx / 2, sd0.vy / 2); items[items.length - 1].pk = P.pack.id; items[items.length - 1].oid = P.oid; items[items.length - 1].ocol = P.col;
+  };
+}
+function sow(sd, u, v, sx, sy, now, vx = 0, vy = 0) {
+  const R = rng(sd.plant.seed), spr = plantFromSeed(sd, 138, 276, 436);
+  const strokes = []; for (let q = 0; q < 26; q++) { const a = R() * Math.PI * 2, d = Math.sqrt(R()) * .085, uu = u + Math.cos(a) * d, vv = v + Math.sin(a) * d; if (uu < .02 || uu > .98 || vv < .02 || vv > .98) continue; strokes.push([uu, vv, R() * Math.PI, .012 + R() * .018, 'OWNER']); }
+  const p = proj(u, v);
+  items.push({ sd, u, v, spr, strokes, sx, sy, dx: sx - p[0], fall: Math.max(0, p[1] - sy), vy: -vy, landed: 0, grow: 0, scale: .55 + R() * .15, sway: R() * 6, rot: (R() - .5) * .6, t0: now });
+}
+
+// ---------- 文件 ----------
+async function loadFiles(files) { for (const f of files) { try { addPack(await readPackFile(f)); } catch (e) { say(f.name + ' を読み込めません'); } } }
+document.getElementById('file').addEventListener('change', e => { loadFiles(e.target.files); e.target.value = ''; });
+addEventListener('dragover', e => e.preventDefault());
+addEventListener('drop', e => { e.preventDefault(); loadFiles(e.dataTransfer.files); });
+const loadUrl = u => fetch(u, { cache: 'no-store' }).then(r => r.blob()).then(readPackFile).then(addPack);
+document.getElementById('sampleA').onclick = () => loadUrl('packs/sp-4f3fa6e8.seedpack.png');
+document.getElementById('sampleB').onclick = () => loadUrl('packs/sp-236fed5d.seedpack.png');
+document.getElementById('clearAll').onclick = () => { items.length = 0; sel = null; owners.clear(); packs.forEach(P => P.el.remove()); packs.length = 0; };
+
+// ---------- 画面 ----------
+function ground(c) {
+  const P = [proj(0, 0), proj(1, 0), proj(1, 1), proj(0, 1)];
+  c.save(); c.beginPath(); P.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.closePath();
+  c.fillStyle = '#ffffff'; c.fill(); // 白色底板，和背景（天空色）分开 c.strokeStyle = 'rgba(32,30,29,.55)'; c.lineWidth = 1; c.stroke();
+  c.strokeStyle = 'rgba(32,30,29,.3)';
+  for (let i = 0; i < 4; i++) { const a = P[i], b = P[(i + 1) % 4], dx = b[0] - a[0], dy = b[1] - a[1]; c.beginPath(); c.moveTo(b[0], b[1]); c.lineTo(b[0] + dx * .03, b[1] + dy * .03); c.stroke(); }
+  c.restore();
+}
+function drawSeed(c, it, x, y) {
+  const sd = it.sd, R = rng(sd.plant.seed ^ 0x9e3779b9), r = (14 + R() * 6) * cam.zoom;
+  c.save(); c.translate(x, y); c.rotate(it.rot); c.fillStyle = sd.color.base || '#9aa090';
+  c.beginPath(); (SEED_SHAPE[sd.act] || SEED_SHAPE.other)(c, r, rng(sd.plant.seed)); c.fill(); c.restore();
+}
+function drawPlant(c, it, p, now) {
+  const dimA = sel && sel.oid !== it.oid && !sameOf(sel).includes(it) && !nearOf(sel).includes(it) ? .28 : 1; // 点选时：同一个人的植物保持清楚，其他人的淡下去
+  const g = it.grow, k = p[3] / (cam.F / cam.R), s = it.scale * (.55 + .45 * g) * k, sp = it.spr, w = 276 * s, h = 436 * s * Math.cos(cam.elev) / Math.cos(32 * Math.PI / 180);
+  const sway = Math.sin(now / 1000 * .6 + it.sway) * .02 * g;
+  c.save(); c.globalAlpha = .05 * g; c.fillStyle = '#201e1d'; c.beginPath(); c.ellipse(p[0], p[1], 40 * s, 40 * s * Math.sin(cam.elev), 0, 0, Math.PI * 2); c.fill(); c.restore();
+  c.save(); c.translate(p[0], p[1]); c.rotate(sway);
+  c.beginPath(); c.rect(-w / 2 - 60, -h * g - 10, w + 120, h * g + 14); c.clip();
+  c.globalAlpha = Math.min(1, g * 1.6) * dimA;
+  [sp.leaf, sp.stem, sp.flower].forEach(cvs => c.drawImage(cvs, -sp.baseX * s, -sp.baseY * h / 436, w, h));
+  c.restore();
+  it.box = [p[0] - w * .3, p[1] - h * .85 * g, w * .6, h * .85 * g + 6]; it.head = [p[0], p[1] - h * .55 * g];
+}
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (!rot) { cam.yaw += cam.vyaw; cam.vyaw *= .94; }
+  packs.forEach(P => P.tick && P.tick(now));
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, CW, CH);
+  // 点到的植物：页面背景慢慢变成那张照片的天空色（5 色，从上到下）
+  sky.a += ((sel && sel.sd.sky ? 1 : 0) - sky.a) * .06;
+  if (sel && sel.sd.sky) sky.cols = sel.sd.sky.map((c, j) => mix(tone(c, .85, .55, .82), '#f3f2f2', .3 + j * .06));
+  const sb = document.getElementById('skybg'); sb.style.opacity = sky.a.toFixed(3); if (sky.cols) { const css = 'linear-gradient(180deg,' + sky.cols.map((c, j) => c + ' ' + (j * 22) + '%').join(',') + ',#f3f2f2 100%)'; if (sb.dataset.g !== css) { sb.style.background = css; sb.dataset.g = css; } } // 天空铺满整个窗口
+  ground(ctx);
+  // 地面上的彩铅笔触
+  ctx.save(); ctx.lineCap = 'round';
+  for (const it of items) { if (!it.grow) continue; for (const [su, sv, a, l, col] of it.strokes) { const d = l / 2 * it.grow, p0 = proj(su - Math.cos(a) * d, sv - Math.sin(a) * d), p1 = proj(su + Math.cos(a) * d, sv + Math.sin(a) * d); ctx.globalAlpha = .6 * it.grow * (sel && sel.oid !== it.oid ? .25 : 1); ctx.strokeStyle = col === 'OWNER' ? (it.ocol || '#9aa090') : col; ctx.lineWidth = 1.6 * p0[3] / (cam.F / cam.R); ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); ctx.stroke(); } }
+  ctx.restore();
+  // 种子落下 → 停稳 → 发芽 → 长成；远的先画
+  const list = items.map(it => {
+    const p = proj(it.u, it.v);
+    if (!it.landed) { it.vy += .55; it.fall -= it.vy; it.rot += .03; it.dx *= .9; if (it.fall <= 0) { it.fall = 0; if (Math.abs(it.vy) > 3) it.vy = -it.vy * .3; else { it.landed = now; it.vy = 0; } } }
+    else it.grow = ease(Math.min(1, (now - it.landed - 500) / 2600));
+    return { it, p };
+  }).sort((a, b) => b.p[2] - a.p[2]);
+  for (const { it, p } of list) {
+    if (it.grow > 0) drawPlant(ctx, it, p, now);
+    if (it.grow < .6) { ctx.save(); ctx.globalAlpha = 1 - it.grow / .6; drawSeed(ctx, it, p[0] + it.dx * 1, p[1] - it.fall); ctx.restore(); }
+  }
+  links(ctx, now); timeline(ctx);
+}
+// ---------- 方案 5：时间的重合 ----------
+// 点一株植物 → 天空变成它那张照片的天空；别人（其他种子包）在前后 30 分钟内拍下的植物，和它之间连起一条细线；下方时间轴标出拍摄时刻
+let sel = null; const sky = { a: 0, cols: null }, NEAR = 30;
+const minOf = sd => { const m = /T(\d\d):(\d\d)/.exec(sd.t || ''); return m ? +m[1] * 60 + +m[2] : null; };
+// 同一种植物（同一种活动）的别人的植物
+const sameOf = it => items.filter(o => o !== it && o.oid !== it.oid && o.grow > .9 && o.sd.act === it.sd.act);
+const nearOf = it => items.filter(o => o !== it && o.oid !== it.oid && o.grow > .9 && minOf(o.sd) != null && Math.abs(minOf(o.sd) - minOf(it.sd)) <= NEAR);
+// 两种线：同一种植物＝实线（从地面根部之间连），拍摄时间相近＝流动的点线（从花头之间连）
+function links(c, now) {
+  if (!sel || !sel.head) return;
+  const t = (now / 1000) % 100, root = it => proj(it.u, it.v);
+  sameOf(sel).forEach(o => {
+    const a = root(sel), b = root(o), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2 + 18;
+    c.save(); c.globalAlpha = .85; const lg = c.createLinearGradient(a[0], a[1], b[0], b[1]); lg.addColorStop(0, sel.ocol || '#201e1d'); lg.addColorStop(1, o.ocol || '#201e1d');
+    c.strokeStyle = lg; c.lineWidth = 1.6; c.beginPath(); c.moveTo(a[0], a[1]); c.quadraticCurveTo(mx, my, b[0], b[1]); c.stroke();
+    c.beginPath(); c.arc(b[0], b[1], 4.5, 0, Math.PI * 2); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = o.ocol || '#201e1d'; c.lineWidth = 1.6; c.stroke(); c.restore();
+  });
+  nearOf(sel).forEach(o => {
+    if (!o.head) return; const [x0, y0] = sel.head, [x1, y1] = o.head, mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 60 - Math.abs(x1 - x0) * .15;
+    c.save(); c.globalAlpha = .9; const lg = c.createLinearGradient(x0, y0, x1, y1); lg.addColorStop(0, sel.ocol || '#201e1d'); lg.addColorStop(1, o.ocol || '#201e1d'); c.strokeStyle = lg; c.lineWidth = 1.6; c.setLineDash([2, 5]); c.lineDashOffset = -t * 20;
+    c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(mx, my, x1, y1); c.stroke(); c.setLineDash([]);
+    c.beginPath(); c.arc(x1, y1, 4, 0, Math.PI * 2); c.fillStyle = o.ocol || '#201e1d'; c.fill(); c.restore();
+  });
+  const r0 = root(sel); c.save(); c.beginPath(); c.arc(r0[0], r0[1], 5, 0, Math.PI * 2); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = sel.ocol || '#201e1d'; c.lineWidth = 2; c.stroke();
+  c.beginPath(); c.arc(sel.head[0], sel.head[1], 6, 0, Math.PI * 2); c.stroke(); c.restore();
+}
+function timeline(c) {
+  const its = items.filter(it => it.grow > .2 && minOf(it.sd) != null); if (!its.length) return;
+  let t0 = Math.min(...its.map(it => minOf(it.sd))), t1 = Math.max(...its.map(it => minOf(it.sd))); if (t1 - t0 < 60) { t0 -= 30; t1 += 30; }
+  const X0 = 560, X1 = 1040, Y = 880, X = m => X0 + (m - t0) / (t1 - t0) * (X1 - X0);
+  c.save(); c.strokeStyle = 'rgba(32,30,29,.35)'; c.lineWidth = 1; c.beginPath(); c.moveTo(X0, Y); c.lineTo(X1, Y); c.stroke();
+  const near = sel ? nearOf(sel) : [];
+  if (sel && minOf(sel.sd) != null) { const a = X(Math.max(t0, minOf(sel.sd) - NEAR)), b = X(Math.min(t1, minOf(sel.sd) + NEAR)); c.fillStyle = 'rgba(32,30,29,.07)'; c.fillRect(a, Y - 7, b - a, 14); }
+  its.forEach(it => { const on = it === sel, nr = near.includes(it); c.globalAlpha = sel && !on && !nr ? .35 : 1; c.fillStyle = it.sd.color.base || '#9aa090'; c.beginPath(); c.arc(X(minOf(it.sd)), Y, on ? 6 : nr ? 4.5 : 3.5, 0, Math.PI * 2); c.fill(); if (on || nr) { c.strokeStyle = it.ocol || '#201e1d'; c.lineWidth = 2; c.stroke(); } });
+  c.globalAlpha = 1; c.font = '400 12px "IBM Plex Mono", monospace'; c.fillStyle = '#8d8a84'; c.textAlign = 'center';
+  const hm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  if (sel && minOf(sel.sd) != null) { c.fillStyle = '#201e1d'; c.fillText(hm(minOf(sel.sd)), X(minOf(sel.sd)), Y - 14); }
+  else { c.textAlign = 'left'; c.fillText(hm(t0), X0, Y + 20); c.textAlign = 'right'; c.fillText(hm(t1), X1, Y + 20); }
+  c.restore();
+}
+function pick(bx, by) {
+  const hit = items.filter(it => it.box && it.grow > .5 && bx >= it.box[0] && bx <= it.box[0] + it.box[2] && by >= it.box[1] && by <= it.box[1] + it.box[3]);
+  if (!hit.length) return null;
+  return hit.sort((a, b) => Math.abs(a.head[0] - bx) - Math.abs(b.head[0] - bx))[0];
+}
+requestAnimationFrame(frame);
+
+// ---------- 转动地面 ----------
+let rot = null;
+cv.addEventListener('pointerdown', e => { if (e.button) return; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; rot = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY }; cam.vyaw = 0; });
+cv.addEventListener('pointermove', e => {
+  if (!rot) return; const k = boardScale(), dx = (e.clientX - rot.x) / k, dy = (e.clientY - rot.y) / k;
+  const d = dx * .006; cam.yaw += d; cam.vyaw = d; cam.elev = Math.max(10 * Math.PI / 180, Math.min(70 * Math.PI / 180, cam.elev + dy * .004));
+  rot.x = e.clientX; rot.y = e.clientY;
+});
+const endRot = e => { if (rot && e && e.type === 'pointerup' && Math.hypot(e.clientX - rot.x0, e.clientY - rot.y0) < 5) { const [bx, by] = toBoard(e.clientX, e.clientY), it = pick(bx, by); sel = it && it !== sel ? it : null; } rot = null; cv.style.cursor = 'grab'; };
+cv.addEventListener('pointerup', endRot); cv.addEventListener('pointercancel', endRot);
+cv.addEventListener('wheel', e => { e.preventDefault(); cam.zoom = Math.max(.6, Math.min(2.2, cam.zoom * Math.exp(-e.deltaY * .0015))); }, { passive: false });
+cv.addEventListener('dblclick', () => { cam.yaw = .5; cam.elev = 32 * Math.PI / 180; cam.zoom = 1; cam.vyaw = 0; });
+</script>
+<script src="garden_versions.js"></script>
+</body>
+</html>

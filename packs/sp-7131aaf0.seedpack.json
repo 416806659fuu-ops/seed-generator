@@ -1,0 +1,252 @@
+{
+ "format": "seedpack",
+ "v": 1,
+ "lsys": 1,
+ "owner": {
+  "id": "u-demo000a",
+  "name": null
+ },
+ "id": "sp-7131aaf0",
+ "created": "2026-10-24T20:23:04+09:00",
+ "generator": "seed-generator v1.18",
+ "sample": false,
+ "day": "2026-10-14",
+ "span": [
+  "2026-10-14T07:41:16+09:00",
+  "2026-10-14T12:28:55+09:00"
+ ],
+ "seeds": [
+  {
+   "id": "10ab6573",
+   "t": "2026-10-14T07:41:16+09:00",
+   "act": "other",
+   "plant": {
+    "rule": "ABOP-fig1.24d",
+    "seed": 279668083,
+    "h": 0.948
+   },
+   "color": {
+    "base": "#98674c",
+    "flower": [
+     "#de7b41",
+     "#cc6933",
+     "#c66439",
+     "#7d90bf",
+     "#8499b8"
+    ],
+    "stem": "#8694b6",
+    "leaf": "#6f9c95"
+   },
+   "sky": [
+    "#d8dfe7",
+    "#9cafcd",
+    "#97a2bb",
+    "#685148",
+    "#997c70"
+   ],
+   "tags": {
+    "weather": "晴",
+    "scene": "树林",
+    "object": null
+   }
+  },
+  {
+   "id": "bedbbd1a",
+   "t": "2026-10-14T07:43:39+09:00",
+   "act": "nature",
+   "plant": {
+    "rule": "ABOP-fig5.11",
+    "seed": 3202071834,
+    "h": 0.49
+   },
+   "color": {
+    "base": "#464c50",
+    "flower": [
+     "#ff863d",
+     "#a7978c",
+     "#ffbc94"
+    ],
+    "stem": "#69757d",
+    "leaf": "#6f9c95"
+   },
+   "sky": [
+    "#b0b5b3",
+    "#9c938e",
+    "#e4ae91",
+    "#7e807f",
+    "#6a6f72"
+   ],
+   "tags": {
+    "weather": "黄昏",
+    "scene": "池塘",
+    "object": null
+   }
+  },
+  {
+   "id": "e10b1cc8",
+   "t": "2026-10-14T09:43:52+09:00",
+   "act": "nature",
+   "plant": {
+    "rule": "ABOP-fig5.11",
+    "seed": 3775601864,
+    "h": 0.989
+   },
+   "color": {
+    "base": "#97795a",
+    "flower": [
+     "#e4ac58",
+     "#cb9551",
+     "#cb6e34",
+     "#ba8045",
+     "#bf7840"
+    ],
+    "stem": "#8694b6",
+    "leaf": "#6f9c95"
+   },
+   "sky": [
+    "#cfb489",
+    "#624838",
+    "#80664f",
+    "#9b8063",
+    "#b69973"
+   ],
+   "tags": {
+    "weather": "黄昏",
+    "scene": "草地",
+    "object": null
+   }
+  },
+  {
+   "id": "ecc434c1",
+   "t": "2026-10-14T10:03:09+09:00",
+   "act": "nature",
+   "plant": {
+    "rule": "ABOP-fig5.11",
+    "seed": 3972281537,
+    "h": 0.708
+   },
+   "color": {
+    "base": "#b67a3c",
+    "flower": [
+     "#f3810c",
+     "#dd9a57",
+     "#be7d41",
+     "#b67e49",
+     "#b09e8c"
+    ],
+    "stem": "#8694b6",
+    "leaf": "#6f9c95"
+   },
+   "sky": [
+    "#e9e6e4",
+    "#88674e",
+    "#a59486",
+    "#c7beb7",
+    "#5b473d"
+   ],
+   "tags": {
+    "weather": "阴",
+    "scene": "草地",
+    "object": null
+   }
+  },
+  {
+   "id": "61618bee",
+   "t": "2026-10-14T11:43:46+09:00",
+   "act": "nature",
+   "plant": {
+    "rule": "ABOP-fig5.11",
+    "seed": 1633782766,
+    "h": 0.918
+   },
+   "color": {
+    "base": "#d2d8db",
+    "flower": [
+     "#c1793e",
+     "#83a1b9",
+     "#6e849a"
+    ],
+    "stem": "#8ba0b1",
+    "leaf": "#6f9c95"
+   },
+   "sky": [
+    "#79899b",
+    "#c1cad0",
+    "#9dadbc",
+    "#dfe4e5",
+    "#423e3e"
+   ],
+   "tags": {
+    "weather": "阴",
+    "scene": "池塘",
+    "object": null
+   }
+  },
+  {
+   "id": "7b921dd5",
+   "t": "2026-10-14T11:55:03+09:00",
+   "act": "nature",
+   "plant": {
+    "rule": "ABOP-fig5.11",
+    "seed": 2073173461,
+    "h": 0.651
+   },
+   "color": {
+    "base": "#82735d",
+    "flower": [
+     "#b39475",
+     "#ad8a52",
+     "#a68759",
+     "#af7c50",
+     "#8695b7"
+    ],
+    "stem": "#8694b6",
+    "leaf": "#6f9c95"
+   },
+   "sky": [
+    "#a38862",
+    "#b6a28d",
+    "#837257",
+    "#6c5d43",
+    "#52452f"
+   ],
+   "tags": {
+    "weather": "黄昏",
+    "scene": "池塘",
+    "object": null
+   }
+  },
+  {
+   "id": "b19f2468",
+   "t": "2026-10-14T12:28:55+09:00",
+   "act": "nature",
+   "plant": {
+    "rule": "ABOP-fig5.11",
+    "seed": 2979996776,
+    "h": 1.069
+   },
+   "color": {
+    "base": "#57452d",
+    "flower": [
+     "#c98a36",
+     "#74a9c8",
+     "#7ea1be"
+    ],
+    "stem": "#919ba2",
+    "leaf": "#6f9c95"
+   },
+   "sky": [
+    "#e2eaee",
+    "#cbd7df",
+    "#bac6d0",
+    "#a4b0ba",
+    "#45586b"
+   ],
+   "tags": {
+    "weather": "阴",
+    "scene": "池塘",
+    "object": null
+   }
+  }
+ ]
+}
