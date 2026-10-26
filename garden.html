@@ -176,8 +176,8 @@ document.getElementById('file').addEventListener('change', e => { loadFiles(e.ta
 addEventListener('dragover', e => e.preventDefault());
 addEventListener('drop', e => { e.preventDefault(); loadFiles(e.dataTransfer.files); });
 const loadUrl = u => fetch(u, { cache: 'no-store' }).then(r => r.blob()).then(readPackFile).then(addPack);
-document.getElementById('sampleA').onclick = () => loadUrl('packs/sp-4f3fa6e8.seedpack.png');
-document.getElementById('sampleB').onclick = () => loadUrl('packs/sp-236fed5d.seedpack.png');
+document.getElementById('sampleA').onclick = () => loadUrl('packs/sample_A.seedpack.png');
+document.getElementById('sampleB').onclick = () => loadUrl('packs/sample_B.seedpack.png');
 document.getElementById('clearAll').onclick = () => { items.length = 0; sel = null; owners.clear(); packs.forEach(P => P.el.remove()); packs.length = 0; };
 
 // ---------- 画面 ----------
