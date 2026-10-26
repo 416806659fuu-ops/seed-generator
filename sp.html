@@ -179,7 +179,7 @@ const CLIP_SCENE = [['the sea', '海', 'sea'], ['a river bank', '川辺', 'natur
 const CLIP_WEATHER = [['a clear blue sky', '晴れ'], ['a cloudy overcast sky', 'くもり'], ['a sunset sky', '夕暮れ'], ['a night sky', '夜']];
 let clipP = null;
 // 模型和运行库都放在本地文件夹 app/lib、app/models（不再从网上下载）
-const getClip = () => clipP || (clipP = import('./lib/transformers/transformers.min.js').then(T => { T.env.allowRemoteModels = true; T.env.allowLocalModels = false; T.env.backends.onnx.wasm.wasmPaths = new URL('lib/transformers/', location.href).href; return T.pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', { dtype: 'q8' }); }).catch(e => { console.warn('CLIP', e); window.__clipErr = String(e && e.stack || e); return null; }));
+const getClip = async () => null; // スマホ版：CLIP は重すぎて画面が固まるので使わない（物体認識と空の色だけ）
 window.getClip = () => getClip();
 // 天气：CLIP 分不清晴和阴，所以先看照片天空的颜色——天空是饱和的蓝就是「晴」；暖色的天空或 CLIP 很确定是黄昏/夜时用那个；其余为「阴」
 // 天气：只看照片天空的颜色（上面 3 色）
@@ -738,10 +738,11 @@ class Component extends DCLogic {
     this._hm = Math.max(0, Math.min(1, (this._hm || 0) + (hov != null ? .08 : -.06))); if (hov != null) this._hi = hov;
     if (this._hm > 0 && this._hi != null) { const K = m.keys.find(k => k.i === this._hi); if (K) { const e = ease(this._hm); sk.b = mixB(sk.b, K.b, e); sk.w = [{ i: this._hi, a: e }].concat((sk.w || []).filter(o => o.i !== this._hi).map(o => ({ i: o.i, a: o.a * (1 - e) }))); sk.day = true; } }
     const pulse = i => { if (!sk.day) return 0; const d = (sk.c - m.mins[i]) / 9; return Math.exp(-d * d); };
+    this._fc = (this._fc || 0) + 1;
     const L = this.layers();
-    if (L) {
+    if (L && (this._fc % 4 === 1 || !this._drawn)) { this._drawn = true;
       const W = 276, H = 436;
-      Object.values(L).forEach(x => { x.globalAlpha = 1; x.clearRect(0, 0, x.canvas.width, x.canvas.height); x.lineCap = x.lineJoin = 'round'; });
+      Object.entries(L).forEach(([k, x]) => { if (k === 'grain') return; x.globalAlpha = 1; x.clearRect(0, 0, x.canvas.width, x.canvas.height); x.lineCap = x.lineJoin = 'round'; });
       // 背景：天空 5 色渐变（从上到下）
       const g0 = L.base.createLinearGradient(0, 0, 0, H);
       sk.b.forEach((c, j) => g0.addColorStop([0, .22, .45, .7, .9][j], c)); g0.addColorStop(1, mix(sk.b[4], '#ffffff', .35));
@@ -764,7 +765,7 @@ class Component extends DCLogic {
         put(blurSet, (1 - f) * dim); put(sharpSet, f * dim);
         g.hx = sp.hx; g.hy = sp.hy;
       });
-      if (this.props.grain ?? true) { const ox = Math.random() * 256, oy = Math.random() * 256, x = L.grain; x.save(); x.translate(-ox, -oy); x.fillStyle = x.createPattern(this.grain, 'repeat'); x.fillRect(0, 0, 552 + 256, 872 + 256); x.restore(); }
+      if ((this.props.grain ?? true) && !this._grainDone) { this._grainDone = true; const ox = 0, oy = 0, x = L.grain; x.save(); x.translate(-ox, -oy); x.fillStyle = x.createPattern(this.grain, 'repeat'); x.fillRect(0, 0, 552 + 256, 872 + 256); x.restore(); }
     }
     if (this.oc) {
       const c = this.oc.getContext('2d'); c.setTransform(2, 0, 0, 2, 0, 0); c.clearRect(0, 0, 390, 1000); c.globalAlpha = 1;
