@@ -154,8 +154,11 @@ const OBJ = {
 };
 const OBJ_ZH = { person: '人', bicycle: '自転車', motorcycle: 'バイク', bird: '鳥', cat: '猫', dog: '犬', horse: '馬', sheep: '羊', cow: '牛', bear: 'クマ', zebra: 'シマウマ', giraffe: 'キリン', elephant: 'ゾウ', pizza: 'ピザ', sandwich: 'サンドイッチ', cake: 'ケーキ', donut: 'ドーナツ', 'hot dog': 'ホットドッグ', bowl: 'お椀', cup: 'カップ', bottle: 'ボトル', 'wine glass': 'グラス' };
 let detP = null;
+// iPhone・iPad の Safari はページが使えるメモリが少なく、大きい認識モデル（CLIP 153MB＋物体認識 71MB）を読むとページごと落ちる
+// → iOS だけ軽い物体認識にして CLIP を使わない（Android・パソコンは精細版のまま）
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
-const getDetector = () => detP || (detP = withTimeout((window.cocoSsd ? cocoSsd.load({ base: 'mobilenet_v2', modelUrl: 'models/coco-ssd/model.json' }) : Promise.reject()).catch(e => { window.__stage = 'detector error: ' + e; return null; }), 30000));
+const getDetector = () => detP || (detP = withTimeout((window.cocoSsd ? cocoSsd.load(IOS ? { base: 'lite_mobilenet_v2', modelUrl: 'models/coco-ssd-lite/model.json' } : { base: 'mobilenet_v2', modelUrl: 'models/coco-ssd/model.json' }) : Promise.reject()).catch(e => { window.__stage = 'detector error: ' + e; return null; }), 30000));
 // 小物体（远处的自行车、树上的鸟）整张图里容易漏：整张 + 2×2 重叠切块各识别一次，再合并
 async function detectTiled(det, img) {
   const W = img.naturalWidth, H = img.naturalHeight, out = [];
@@ -187,7 +190,7 @@ const CLIP_SCENE = [['the sea', '海', 'sea'], ['a river bank', '川辺', 'natur
 const CLIP_WEATHER = [['a clear blue sky', '晴れ'], ['a cloudy overcast sky', 'くもり'], ['a sunset sky', '夕暮れ'], ['a night sky', '夜']];
 let clipP = null;
 // 模型和运行库都放在本地文件夹 app/lib、app/models（不再从网上下载）
-const getClip = () => clipP || (clipP = withTimeout(import('./lib/transformers/transformers.min.js').then(T => { T.env.allowRemoteModels = true; T.env.allowLocalModels = false; T.env.backends.onnx.wasm.wasmPaths = new URL('lib/transformers/', location.href).href; return T.pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', { dtype: 'q8' }); }), 90000).catch(e => { console.warn('CLIP', e); return null; }));
+const getClip = () => IOS ? Promise.resolve(null) : clipP || (clipP = withTimeout(import('./lib/transformers/transformers.min.js').then(T => { T.env.allowRemoteModels = true; T.env.allowLocalModels = false; T.env.backends.onnx.wasm.wasmPaths = new URL('lib/transformers/', location.href).href; return T.pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', { dtype: 'q8' }); }), 90000).catch(e => { console.warn('CLIP', e); return null; }));
 window.getClip = () => getClip();
 // 天气：CLIP 分不清晴和阴，所以先看照片天空的颜色——天空是饱和的蓝就是「晴」；暖色的天空或 CLIP 很确定是黄昏/夜时用那个；其余为「阴」
 // 天气：只看照片天空的颜色（上面 3 色）
