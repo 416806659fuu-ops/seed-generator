@@ -43,11 +43,11 @@ a{color:var(--color-text);} a:hover{color:var(--color-accent);}
       </sc-for>
     </div>
     <svg width="22" height="22" viewBox="0 0 64 64" style="position:absolute;left:184px;bottom:200px;display:{{ recogDisp }};z-index:5;"><circle cx="32" cy="32" r="26" fill="none" stroke="rgba(32,30,29,.15)" stroke-width="8"></circle><circle cx="32" cy="32" r="26" fill="none" stroke="#201e1d" stroke-width="8" stroke-linecap="round" stroke-dasharray="163.36" stroke-dashoffset="{{ recogOff }}" transform="rotate(-90 32 32)"></circle></svg>
-    <div style="position:absolute;right:18px;bottom:212px;width:112px;height:112px;border-radius:24px;background:#fbfbf9;box-shadow:0 1px 2px rgba(0,0,0,.06),0 8px 22px rgba(30,30,25,.16);overflow:hidden;will-change:transform;z-index:6;">
+    <div style="position:absolute;left:{{ packX }}px;top:{{ packY }}px;width:112px;height:112px;border-radius:24px;background:#fbfbf9;box-shadow:0 1px 2px rgba(0,0,0,.06),0 8px 22px rgba(30,30,25,.16);overflow:hidden;will-change:transform;z-index:6;">
       <canvas ref="{{ seedRef }}" width="380" height="380" style="position:absolute;left:0;top:0;width:112px;height:112px;touch-action:none;"></canvas>
       <div style="position:absolute;left:11px;top:9px;font:500 7px 'IBM Plex Mono',monospace;line-height:1.35;color:#201e1d;pointer-events:none;">seed pack<br><span style="color:#8d8a84;">{{ packDate }}</span></div>
     </div>
-    <button onClick="{{ gyro }}" style="position:absolute;right:18px;bottom:334px;display:{{ gyroDisp }};display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;height:28px;font-size:11px;border:0;background:rgba(251,251,249,.8);color:#201e1d;z-index:6;">傾けて揺らす</button>
+    <button onClick="{{ gyro }}" style="position:absolute;left:{{ gyroX }}px;top:{{ gyroY }}px;display:{{ gyroDisp }};align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;height:28px;font-size:11px;border:0;background:rgba(251,251,249,.8);color:#201e1d;z-index:6;">傾けて揺らす</button>
     <div style="position:absolute;left:18px;right:18px;top:96px;font:500 10px 'IBM Plex Mono',monospace;color:#a0532e;z-index:30;pointer-events:none;word-break:break-all;">{{ errText }}</div>
     <div style="position:absolute;left:18px;right:18px;bottom:{{ botY }}px;display:flex;justify-content:space-between;z-index:5;">
       <button onClick="{{ savePlant }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.8);color:#201e1d;">植物を保存</button>
@@ -508,13 +508,14 @@ class Component extends DCLogic {
   wrapRef = el => { this.wrap = el; };
   plantRef = el => { this.pc = el; this.lc = null; };
   overRef = el => { this.oc = el; };
+  packSpots() { const H = this.state.boardH || 844; return [[260, H - 324], [18, 100], [260, 100], [18, H - 324]]; }
   // 种子包：拖四个角＝旋转，拖中间＝移动；松手后回到原位（位置和角度都弹回），里面的种子跟着重力和惯性动
   seedRef = el => {
     if (!el || this.sb) return; this.sb = new SeedBox(el); this.sbEl = el; const card = el.parentElement, sb = this.sb;
     card.style.transformOrigin = '50% 50%';
     sb.onMove = (off, rot) => { card.style.transform = `translate(${off[0]}px, ${off[1]}px) rotate(${rot}rad)`; };
     const local = e => { const r = card.getBoundingClientRect(), k = this.state.scale || 1, cx = r.left + r.width / 2, cy = r.top + r.height / 2, dx = (e.clientX - cx) / k, dy = (e.clientY - cy) / k, c = Math.cos(-sb.rot), s = Math.sin(-sb.rot); return { cx, cy, lx: dx * c - dy * s, ly: dx * s + dy * c }; };
-    const isCorner = p => Math.abs(p.lx) > PACK.s / 2 - 46 && Math.abs(p.ly) > PACK.s / 2 - 46;
+    const isCorner = p => false; // スマホ：回さずに動かすだけ
     el.addEventListener('pointerdown', e => {
       const p = local(e); el.setPointerCapture(e.pointerId);
       if (isCorner(p)) sb.cardDrag = { mode: 'rot', a0: Math.atan2(e.clientY - p.cy, e.clientX - p.cx), r0: sb.rot };
@@ -527,7 +528,14 @@ class Component extends DCLogic {
       if (d.mode === 'move') { const k = this.state.scale || 1; sb.off = [d.o[0] + (e.clientX - d.cx) / k, d.o[1] + (e.clientY - d.cy) / k]; }
       else { const p = local(e); sb.rot = d.r0 + Math.atan2(e.clientY - p.cy, e.clientX - p.cx) - d.a0; }
     });
-    const up = () => { sb.cardDrag = null; el.style.cursor = 'grab'; };
+    const up = () => {
+      if (sb.cardDrag && sb.cardDrag.mode === 'move') {
+        const sp = this.packSpots(), cur = sp[this.state.packPos || 0], cx = cur[0] + sb.off[0], cy = cur[1] + sb.off[1];
+        let bi = 0, bd = 1e9; sp.forEach(([x, y], k) => { const d = Math.hypot(x - cx, y - cy); if (d < bd) { bd = d; bi = k; } });
+        sb.off = [cx - sp[bi][0], cy - sp[bi][1]]; this.setState({ packPos: bi }); // 新しい場所からバネで戻る
+      }
+      sb.cardDrag = null; el.style.cursor = 'grab';
+    };
     el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
   };
   gyro = () => { DeviceOrientationEvent.requestPermission().then(r => { if (r === 'granted') this.setState({ gyroOn: true }); }).catch(() => {}); if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(() => {}); };
@@ -858,7 +866,7 @@ class Component extends DCLogic {
         let x = 195 - B / 2 - ord.slice(0, ci).length * (S + G);
         return ord.map((i, j) => { const on = i === fk, sz = on ? B : S, it = { k: i, x: Math.round(x), b: on ? 14 : 0, s: sz, bgi: 'url("' + items[i].src + '")', bp: (() => { const a = an[i]; if (!a || !a.obj) return 'center'; const [x, y, w, h] = a.obj.bbox; return `${Math.round((x + w / 2) / a.iw * 100)}% ${Math.round((y + h / 2) / a.ih * 100)}%`; })(), op: fk == null || on ? 1 : .6, sh: on ? '0 0 0 2.5px #fff, 0 6px 16px rgba(0,0,0,.22)' : '0 2px 6px rgba(0,0,0,.12)', sc: st.pressK === i ? .82 : 1, tap: () => this.setState({ hp: st.hp === i ? null : i, hg: st.hp === i ? null : m.pOf[i] }) }; x += sz + G; return it; });
       })(),
-      onMove: this.onMove, onLeave: this.onLeave, seedRef: this.seedRef, savePlant: this.savePlant, gyro: this.gyro, gyroDisp: window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && navigator.maxTouchPoints > 0 && !st.gyroOn ? 'block' : 'none', clear: this.clear, save: this.save, hintDisp: items.length && !st.busy ? 'block' : 'none', recogDisp: st.recog ? 'block' : 'none', recogOff: (163.36 * (1 - (st.recog || 0))).toFixed(1), emptyDisp: items.length || st.busy ? 'none' : 'flex', progDisp: st.busy || st.picking ? 'flex' : 'none', errText: st.errText || '', pick: this.pick, progW: Math.round((st.prog || 0) * 100) + '%', progOff: (163.36 * (1 - Math.max(.08, st.prog || 0))).toFixed(1), progText: st.progText, noteDisp: !st.busy && st.progText ? 'block' : 'none'
+      onMove: this.onMove, onLeave: this.onLeave, seedRef: this.seedRef, savePlant: this.savePlant, gyro: this.gyro, gyroDisp: window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && navigator.maxTouchPoints > 0 && !st.gyroOn ? 'inline-flex' : 'none', clear: this.clear, save: this.save, hintDisp: items.length && !st.busy ? 'block' : 'none', recogDisp: st.recog ? 'block' : 'none', recogOff: (163.36 * (1 - (st.recog || 0))).toFixed(1), emptyDisp: items.length || st.busy ? 'none' : 'flex', progDisp: st.busy || st.picking ? 'flex' : 'none', errText: st.errText || '', ...(() => { const [x, y] = this.packSpots()[st.packPos || 0]; return { packX: x, packY: y, gyroX: x, gyroY: y < 200 ? y + 120 : y - 42 }; })(), pick: this.pick, progW: Math.round((st.prog || 0) * 100) + '%', progOff: (163.36 * (1 - Math.max(.08, st.prog || 0))).toFixed(1), progText: st.progText, noteDisp: !st.busy && st.progText ? 'block' : 'none'
     };
   }
 }
