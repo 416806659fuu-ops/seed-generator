@@ -48,6 +48,11 @@ a{color:var(--color-text);} a:hover{color:var(--color-accent);}
       <div style="position:absolute;left:11px;top:9px;font:500 7px 'IBM Plex Mono',monospace;line-height:1.35;color:#201e1d;pointer-events:none;">seed pack<br><span style="color:#8d8a84;">{{ packDate }}</span></div>
     </div>
     
+    <div onClick="{{ startTap }}" style="position:absolute;inset:0;z-index:40;display:{{ startDisp }};flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(243,242,242,.92);">
+      <div style="font:600 18px 'IBM Plex Mono','Noto Sans JP',monospace;color:#201e1d;">種ジェネレーター</div>
+      <div style="font:400 13px 'Noto Sans JP',sans-serif;color:#605d5d;text-align:center;line-height:1.7;">スマホを傾けると、種パックの種が揺れます。<br>このあと「動作と方向」へのアクセスを許可してください。</div>
+      <div style="display:inline-flex;align-items:center;height:42px;padding:0 26px;border-radius:21px;background:#201e1d;color:#f3f2f2;font:600 14px 'Noto Sans JP',sans-serif;">タップしてはじめる</div>
+    </div>
     <div style="position:absolute;left:18px;right:18px;top:96px;font:500 10px 'IBM Plex Mono',monospace;color:#a0532e;z-index:30;pointer-events:none;word-break:break-all;">{{ errText }}</div>
     <div style="position:absolute;left:18px;right:18px;bottom:{{ botY }}px;display:flex;justify-content:space-between;z-index:5;">
       <button onClick="{{ savePlant }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.8);color:#201e1d;">植物を保存</button>
@@ -515,7 +520,7 @@ class Component extends DCLogic {
     card.style.transformOrigin = '50% 50%';
     sb.onMove = (off, rot) => { card.style.transform = `translate(${off[0]}px, ${off[1]}px) rotate(${rot}rad)`; };
     const local = e => { const r = card.getBoundingClientRect(), k = this.state.scale || 1, cx = r.left + r.width / 2, cy = r.top + r.height / 2, dx = (e.clientX - cx) / k, dy = (e.clientY - cy) / k, c = Math.cos(-sb.rot), s = Math.sin(-sb.rot); return { cx, cy, lx: dx * c - dy * s, ly: dx * s + dy * c }; };
-    const isCorner = p => false; // スマホ：回さずに動かすだけ
+    const isCorner = p => Math.abs(p.lx) > 28 && Math.abs(p.ly) > 28; // 角を持つと回る、真ん中を持つと動く
     el.addEventListener('pointerdown', e => {
       const p = local(e); el.setPointerCapture(e.pointerId);
       if (isCorner(p)) sb.cardDrag = { mode: 'rot', a0: Math.atan2(e.clientY - p.cy, e.clientX - p.cx), r0: sb.rot };
@@ -866,7 +871,8 @@ class Component extends DCLogic {
         let x = 195 - B / 2 - ord.slice(0, ci).length * (S + G);
         return ord.map((i, j) => { const on = i === fk, sz = on ? B : S, it = { k: i, x: Math.round(x), b: on ? 14 : 0, s: sz, bgi: 'url("' + items[i].src + '")', bp: (() => { const a = an[i]; if (!a || !a.obj) return 'center'; const [x, y, w, h] = a.obj.bbox; return `${Math.round((x + w / 2) / a.iw * 100)}% ${Math.round((y + h / 2) / a.ih * 100)}%`; })(), op: fk == null || on ? 1 : .6, sh: on ? '0 0 0 2.5px #fff, 0 6px 16px rgba(0,0,0,.22)' : '0 2px 6px rgba(0,0,0,.12)', sc: st.pressK === i ? .82 : 1, tap: () => this.setState({ hp: st.hp === i ? null : i, hg: st.hp === i ? null : m.pOf[i] }) }; x += sz + G; return it; });
       })(),
-      onMove: this.onMove, onLeave: this.onLeave, seedRef: this.seedRef, savePlant: this.savePlant, gyro: this.gyro, gyroDisp: window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && navigator.maxTouchPoints > 0 && !st.gyroOn ? 'inline-flex' : 'none', clear: this.clear, save: this.save, hintDisp: items.length && !st.busy ? 'block' : 'none', recogDisp: st.recog ? 'block' : 'none', recogOff: (163.36 * (1 - (st.recog || 0))).toFixed(1), emptyDisp: items.length || st.busy ? 'none' : 'flex', progDisp: st.busy || st.picking ? 'flex' : 'none', errText: st.errText || '', ...(() => { const [x, y] = this.packSpots()[st.packPos || 0]; return { packX: x, packY: y, gyroX: x, gyroY: y < 200 ? y + 120 : y - 42 }; })(), pick: this.pick, progW: Math.round((st.prog || 0) * 100) + '%', progOff: (163.36 * (1 - Math.max(.08, st.prog || 0))).toFixed(1), progText: st.progText, noteDisp: !st.busy && st.progText ? 'block' : 'none'
+      onMove: this.onMove, onLeave: this.onLeave, seedRef: this.seedRef, savePlant: this.savePlant, gyro: this.gyro, gyroDisp: window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && navigator.maxTouchPoints > 0 && !st.gyroOn ? 'inline-flex' : 'none', clear: this.clear, save: this.save, hintDisp: items.length && !st.busy ? 'block' : 'none', recogDisp: st.recog ? 'block' : 'none', recogOff: (163.36 * (1 - (st.recog || 0))).toFixed(1), emptyDisp: items.length || st.busy ? 'none' : 'flex', progDisp: st.busy || st.picking ? 'flex' : 'none', errText: st.errText || '', startDisp: st.started || !(window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))) ? 'none' : 'flex', // iPhone・iPad だけ
+      startTap: () => { try { DeviceOrientationEvent.requestPermission().then(r => this.setState({ gyroOn: r === 'granted' })).catch(() => {}); if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(() => {}); } catch (e) {} this.setState({ started: true }); }, ...(() => { const [x, y] = this.packSpots()[st.packPos || 0]; return { packX: x, packY: y, gyroX: x, gyroY: y < 200 ? y + 120 : y - 42 }; })(), pick: this.pick, progW: Math.round((st.prog || 0) * 100) + '%', progOff: (163.36 * (1 - Math.max(.08, st.prog || 0))).toFixed(1), progText: st.progText, noteDisp: !st.busy && st.progText ? 'block' : 'none'
     };
   }
 }
