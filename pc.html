@@ -11,7 +11,8 @@
 <link rel="stylesheet" href="_ds/modernist-b797ad02-10da-4586-840a-5580f3b31d75/styles.css">
 <script src="_ds/modernist-b797ad02-10da-4586-840a-5580f3b31d75/_ds_bundle.js"></script>
 <script src="lib/lite.umd.js"></script>
-<script src="lib/seedpack_png.js"></script>
+<script src="lib/seedpack_png.js?v=2"></script>
+<script src="lib/seedvault.js"></script>
 <script src="lib/tf.min.js"></script>
 <script src="lib/coco-ssd.min.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Archivo:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
@@ -72,6 +73,17 @@ a{color:var(--color-text);} a:hover{color:var(--color-accent);}
   </div>
 </div>
 </x-dc>
+<div id="startOv" style="position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(243,242,242,.95);font-family:'Noto Sans JP',sans-serif;">
+  <div style="font:600 20px 'IBM Plex Mono','Noto Sans JP',monospace;color:#201e1d;">種ジェネレーター</div>
+  <div style="display:flex;flex-direction:column;gap:6px;width:280px;">
+    <span style="font:500 12px 'Noto Sans JP';color:#605d5d;">ニックネーム</span>
+    <input id="stName" type="text" maxlength="16" placeholder="なまえ" style="height:44px;border-radius:12px;border:1.5px solid #201e1d;background:#fbfbf9;padding:0 14px;font:500 16px 'Noto Sans JP',sans-serif;color:#201e1d;outline:none;">
+    <i id="stDot" style="width:12px;height:12px;border-radius:50%;margin-top:2px;"></i>
+    <span style="font:500 12px 'Noto Sans JP';color:#605d5d;margin-top:10px;">写真を見せる番号（6 けた）</span>
+    <span style="display:flex;gap:8px;"><input id="stPin" type="text" inputmode="numeric" maxlength="6" placeholder="123456" style="height:44px;border-radius:12px;border:1.5px solid #201e1d;background:#fbfbf9;padding:0 14px;font:500 16px 'Noto Sans JP',sans-serif;color:#201e1d;outline:none;flex:1;min-width:0;letter-spacing:.2em;font-family:'IBM Plex Mono',monospace;"><span id="stRand" style="display:inline-flex;align-items:center;height:44px;padding:0 14px;border-radius:12px;border:1.5px solid #201e1d;font:600 12px 'Noto Sans JP';cursor:pointer;">ランダム</span></span>
+  </div>
+  <div id="stGo" style="display:inline-flex;align-items:center;height:44px;padding:0 28px;border-radius:22px;background:#201e1d;color:#f3f2f2;font:600 14px 'Noto Sans JP';cursor:pointer;">はじめる</div>
+</div>
 <script src="versions.js" data-actions="1"></script>
 <script type="text/x-dc" data-dc-script data-props="{&quot;cycle&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:10,&quot;max&quot;:90,&quot;step&quot;:5,&quot;unit&quot;:&quot;s&quot;,&quot;default&quot;:30,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;动态&quot;},&quot;boxColor&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;accent&quot;,&quot;blue&quot;,&quot;ink&quot;],&quot;default&quot;:&quot;accent&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;画面&quot;},&quot;links&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;all&quot;,&quot;hover&quot;],&quot;default&quot;:&quot;all&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;画面&quot;},&quot;photosBW&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;画面&quot;},&quot;grain&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;画面&quot;}}">
 const INK = '#201e1d';
@@ -198,7 +210,7 @@ const CLIP_SCENE = [['the sea', '海', 'sea'], ['a river bank', '川辺', 'natur
 const CLIP_WEATHER = [['a clear blue sky', '晴れ'], ['a cloudy overcast sky', 'くもり'], ['a sunset sky', '夕暮れ'], ['a night sky', '夜']];
 let clipP = null;
 // 模型和运行库都放在本地文件夹 app/lib、app/models（不再从网上下载）
-const getClip = () => clipP || (clipP = import('./lib/transformers/transformers.min.js').then(T => { T.env.allowRemoteModels = true; T.env.allowLocalModels = false; T.env.backends.onnx.wasm.wasmPaths = new URL('lib/transformers/', location.href).href; return T.pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', { dtype: 'q8' }); }).catch(e => { console.warn('CLIP', e); window.__clipErr = String(e && e.stack || e); return null; }));
+const getClip = () => clipP || (clipP = import('./lib/transformers/transformers.min.js').then(T => { T.env.allowRemoteModels = true; T.env.allowLocalModels = false; T.env.backends.onnx.wasm.wasmPaths = new URL('lib/transformers/', location.href).href; return T.pipeline('zero-shot-image-classification', 'Xenova/clip-vit-base-patch32', { dtype: 'q8' }); }).catch(e => { console.warn('CLIP', e); return null; }));
 window.getClip = () => getClip();
 // 天气：CLIP 分不清晴和阴，所以先看照片天空的颜色——天空是饱和的蓝就是「晴」；暖色的天空或 CLIP 很确定是黄昏/夜时用那个；其余为「阴」
 // 天气：只看照片天空的颜色（上面 3 色）
@@ -519,6 +531,24 @@ async function codeToPack(code) { const b = atob(code.replace(/^SP1\./, '').repl
 // 只用种子包就能重新画出植物（交流平台要用的就是这个）
 function plantFromSeed(sd, x, W, H) { return plantSprite({ act: sd.act, x, H: sd.plant.h * 330, rs: sd.plant.seed, cl: sd.color.flower, stemCol: sd.color.stem, leafCol: sd.color.leaf }, W, H); }
 Object.assign(window, { buildPack, packToCode, codeToPack, plantFromSeed, SeedBox, SEED_SHAPE, seedColor });
+// 端末ごとの持ち主：初めて開いたときに id と色を決めてこの端末に保存。ニックネームは開始画面で入れる
+const OWNER_COLS = ['#d9734e', '#4f86c6', '#d6a833', '#7a9e5a', '#a8679e', '#3f9c96', '#c45b6b', '#7d6fb8'];
+function getOwner() {
+  let o = null; try { o = JSON.parse(localStorage.getItem('seedOwner') || 'null'); } catch (e) {}
+  if (!o) o = { id: 'u-' + (Math.random() * 4294967296 >>> 0).toString(16).padStart(8, '0'), name: null };
+  if (!o.color) o.color = OWNER_COLS[Math.floor(Math.random() * OWNER_COLS.length)];
+  try { localStorage.setItem('seedOwner', JSON.stringify(o)); } catch (e) {}
+  return o;
+}
+(function () { // 開始画面：ニックネームと番号
+  const go = () => { const ov = document.getElementById('startOv'); if (!ov) return setTimeout(go, 100);
+    const me = getOwner(), nm = document.getElementById('stName'), pin = document.getElementById('stPin'), newPin = () => String(Math.floor(Math.random() * 1e6)).padStart(6, '0');
+    nm.value = me.name || ''; pin.value = me.pin || newPin(); document.getElementById('stDot').style.background = me.color;
+    pin.addEventListener('input', () => { pin.value = pin.value.replace(/\D/g, '').slice(0, 6); });
+    document.getElementById('stRand').onclick = () => { pin.value = newPin(); };
+    document.getElementById('stGo').onclick = () => { const o = getOwner(); o.name = nm.value.trim() || null; o.pin = pin.value.length === 6 ? pin.value : newPin(); try { localStorage.setItem('seedOwner', JSON.stringify(o)); } catch (e) {} ov.remove(); };
+  }; go();
+})();
 class Component extends DCLogic {
   state = { items: [], an: [], gap: 6, seed: 7, scale: 0.6, hp: null, hg: null, sample: true, busy: false, prog: 0, progText: '' };
   wrapRef = el => { this.wrap = el; };
@@ -665,7 +695,14 @@ class Component extends DCLogic {
   // 種パックの保存：種パックの画像（.seedpack.png）だけ
   save = async () => {
     const st = this.state, m = this.model(); if (!st.items.length || !st.an.length) return;
-    const pack = await buildPack(st, m, this), packPng = await packToPng(pack);
+    const pack = await buildPack(st, m, this);
+    // 写真を番号で暗号化して種パックに入れる（番号は種パックには入れない）。物体の位置も記録
+    const photos = {}, own = getOwner();
+    m.plants.forEach((p, k) => { const it = st.items[p.i], a = st.an[p.i], sd = pack.seeds[k]; if (!it || !it.img || !sd) return; photos[sd.id] = it.img;
+      const iw = it.img.naturalWidth, ih = it.img.naturalHeight; sd.frame = { aspect: +(iw / ih).toFixed(3) }; if (a && a.obj) sd.frame.obj = a.obj.bbox.map((v, i) => +(v / (i % 2 ? ih : iw)).toFixed(3)); });
+    if (own.pin) await vaultSeal(pack, own.pin, photos);
+    pack.owner = { id: own.id, name: own.name || null, color: own.color };
+    const packPng = await packToPng(pack);
     this.dl(URL.createObjectURL(packPng), pack.id + '.seedpack.png'); window.__lastPack = pack;
   };
   dl(href, name) { const a = document.createElement('a'); a.href = href; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }

@@ -1,4 +1,4 @@
-window.SEED_VERSIONS = [{v: '1.29', file: 'pc.html', date: '2026-10-26', note: 'テストプレイ版'}];
+window.SEED_VERSIONS = [{v: '1.30', file: 'pc.html', date: '2026-10-26', note: 'テストプレイ版'}];
 
 (function(){
   const me = document.currentScript, actions = me.dataset.actions === '1';
