@@ -36,7 +36,7 @@ html,body{overscroll-behavior:none;}
     <div style="position:absolute;left:18px;right:18px;top:{{ topY }}px;display:flex;justify-content:space-between;gap:8px;z-index:5;">
       <button onClick="{{ clear }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.75);color:#201e1d;">クリア</button>
       <span style="display:flex;gap:8px;">
-        <button onClick="{{ loadSample }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.75);color:#201e1d;">サンプル</button>
+
         <label style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;background:#ec3013;color:#fff;">＋ 写真<input type="file" accept="image/*" multiple="multiple" data-files="1" style="display:none;"></label>
       </span>
     </div>
@@ -56,12 +56,10 @@ html,body{overscroll-behavior:none;}
       <div style="display:flex;flex-direction:column;gap:6px;width:240px;">
         <span style="font:500 12px 'Noto Sans JP',sans-serif;color:#605d5d;">ニックネーム</span>
         <input data-name="1" type="text" maxlength="16" placeholder="なまえ" style="height:44px;border-radius:12px;border:1.5px solid #201e1d;background:#fbfbf9;padding:0 14px;font:500 16px 'Noto Sans JP',sans-serif;color:#201e1d;outline:none;-webkit-user-select:text;user-select:text;">
-        <span style="display:flex;align-items:center;gap:8px;font:400 11px 'Noto Sans JP',sans-serif;color:#8d8a84;"><i data-mycolor="1" style="width:12px;height:12px;border-radius:50%;"></i>この端末の色（種の庭で使います）</span>
+        <i data-mycolor="1" style="width:12px;height:12px;border-radius:50%;margin-top:2px;"></i>
       </div>
-      <div style="font:400 12px 'Noto Sans JP',sans-serif;color:#605d5d;text-align:center;line-height:1.7;display:{{ iosNote }};">スマホを傾けると、種パックの種が揺れます。<br>このあと「動作と方向」へのアクセスを許可してください。</div>
       <div data-start="1" style="display:inline-flex;align-items:center;height:44px;padding:0 28px;border-radius:22px;background:#201e1d;color:#f3f2f2;font:600 14px 'Noto Sans JP',sans-serif;">はじめる</div>
     </div>
-    <div style="position:absolute;left:18px;right:18px;top:96px;font:500 10px 'IBM Plex Mono',monospace;color:#a0532e;z-index:30;pointer-events:none;word-break:break-all;">{{ errText }}</div>
     <div style="position:absolute;left:18px;right:18px;bottom:{{ botY }}px;display:flex;justify-content:space-between;z-index:5;">
       <button onClick="{{ savePlant }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.8);color:#201e1d;">botanical logを保存</button>
       <button onClick="{{ save }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:#201e1d;color:#f3f2f2;">種パックを保存</button>
@@ -160,7 +158,7 @@ const OBJ = {
   animal: ['bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'bear', 'zebra', 'giraffe', 'elephant'],
   food: ['pizza', 'sandwich', 'cake', 'donut', 'hot dog', 'bowl', 'cup', 'bottle', 'wine glass', 'banana', 'apple', 'orange', 'broccoli', 'carrot', 'dining table']
 };
-const OBJ_ZH = { person: '人', bicycle: '自転車', motorcycle: 'バイク', bird: '鳥', cat: '猫', dog: '犬', horse: '馬', sheep: '羊', cow: '牛', bear: 'クマ', zebra: 'シマウマ', giraffe: 'キリン', elephant: 'ゾウ', pizza: 'ピザ', sandwich: 'サンドイッチ', cake: 'ケーキ', donut: 'ドーナツ', 'hot dog': 'ホットドッグ', bowl: 'お椀', cup: 'カップ', bottle: 'ボトル', 'wine glass': 'グラス' };
+const OBJ_ZH = { 'dining table': 'テーブル', person: '人', bicycle: '自転車', motorcycle: 'バイク', bird: '鳥', cat: '猫', dog: '犬', horse: '馬', sheep: '羊', cow: '牛', bear: 'クマ', zebra: 'シマウマ', giraffe: 'キリン', elephant: 'ゾウ', pizza: 'ピザ', sandwich: 'サンドイッチ', cake: 'ケーキ', donut: 'ドーナツ', 'hot dog': 'ホットドッグ', bowl: 'お椀', cup: 'カップ', bottle: 'ボトル', 'wine glass': 'グラス' };
 let detP = null;
 // iPhone・iPad の Safari はページが使えるメモリが少なく、大きい認識モデル（CLIP 153MB＋物体認識 71MB）を読むとページごと落ちる
 // → iOS だけ軽い物体認識にして CLIP を使わない（Android・パソコンは精細版のまま）
@@ -400,7 +398,7 @@ function plantSprite(g, W, H) {
   const up = heads.filter(h => h[1] < top); const use = up.length ? up : heads;
   let hx = ox, hy = baseY - bh * sc * .85;
   if (use.length) { hx = use.reduce((s, h) => s + h[0], 0) / use.length; hy = use.reduce((s, h) => s + h[1], 0) / use.length; }
-  return { stem, leaf, flower, hx, hy, gr: Math.max(14, Math.min(40, bw * sc * .28)), baseX: g.x, baseY };
+  return { stem, leaf, flower, hx, hy, gr: Math.max(14, Math.min(40, bw * sc * .28)), baseX: g.x, baseY, rootX: ox, stemCol: g.stemCol };
 }
 
 // ===== 种子：每株一颗平面轮廓的种子，形状来自它的植物种类，颜色来自那张照片 =====
@@ -569,10 +567,7 @@ class Component extends DCLogic {
       const me = getOwner(); if (nm && me.name) nm.value = me.name; if (dot) dot.style.background = me.color;
       el.addEventListener('click', () => {
         // 許可のたずね方は、タップの中ですぐ（await の前に）呼ぶ必要がある
-        if (IOS && window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) {
-          try { DeviceOrientationEvent.requestPermission().then(r => this.setState({ gyroOn: r === 'granted', errText: r === 'granted' ? '' : '傾きセンサーが許可されませんでした' })).catch(e => this.setState({ errText: 'センサー: ' + (e && e.message || e) })); } catch (e) {}
-          try { if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(() => {}); } catch (e) {}
-        }
+        // iPhone の傾きセンサーは今は使わない（許可の画面が出ないため）
         const o = getOwner(); o.name = (nm && nm.value.trim()) || null; try { localStorage.setItem('seedOwner', JSON.stringify(o)); } catch (e) {}
         if (nm) nm.blur();
         this.setState({ started: true, ownerName: o.name });
@@ -709,15 +704,28 @@ class Component extends DCLogic {
     });
     c.drawImage(L.grain.canvas, 0, 0, Wp, Hp);
     const day = st.items[0] && st.items[0].date ? new Date(st.items[0].date) : new Date(), stamp = day.getFullYear() + String(day.getMonth() + 1).padStart(2, '0') + String(day.getDate()).padStart(2, '0');
-    this.dl(out.toDataURL('image/png'), 'plant_' + stamp + '.png');
+    const du = out.toDataURL('image/png'), bin = atob(du.split(',')[1]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    this.deliver(new Blob([u8], { type: 'image/png' }), 'botanical_log_' + stamp + '.png');
   };
   // 種パックの保存：種パックの画像（.seedpack.png）だけ
   save = async () => {
     const st = this.state, m = this.model(); if (!st.items.length || !st.an.length) return;
     const pack = await buildPack(st, m, this), packPng = await packToPng(pack);
-    this.dl(URL.createObjectURL(packPng), pack.id + '.seedpack.png'); window.__lastPack = pack;
+    this.deliver(packPng, pack.id + '.seedpack.png'); window.__lastPack = pack;
   };
   dl(href, name) { const a = document.createElement('a'); a.href = href; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+  deliver(blob, name) {
+    const file = new File([blob], name, { type: 'image/png' });
+    const show = () => { // 共有できないとき：画像を表示して長押しで保存してもらう
+      const url = URL.createObjectURL(blob), ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(20,20,18,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;';
+      ov.innerHTML = `<img src="${url}" style="max-width:86vw;max-height:70vh;border-radius:14px;-webkit-touch-callout:default;-webkit-user-select:auto;"><div style="color:#fff;font:500 13px 'Noto Sans JP',sans-serif;">画像を長押しして保存</div><div style="color:#fff;font:600 14px 'Noto Sans JP';padding:10px 24px;border:1.5px solid #fff;border-radius:20px;">閉じる</div>`;
+      ov.lastElementChild.onclick = () => { ov.remove(); URL.revokeObjectURL(url); }; document.body.appendChild(ov);
+    };
+    if (navigator.canShare && navigator.canShare({ files: [file] })) navigator.share({ files: [file] }).catch(e => { if (e && e.name !== 'AbortError') show(); });
+    else if (IOS) show();
+    else this.dl(URL.createObjectURL(blob), name);
+  }
   loadSample = () => { if (this._ingesting) return; this.setState({ items: [], an: [] }); this.ingest(SAMPLE.map(r => ({ ...r, date: new Date('2026-10-03T' + r.time + ':00').getTime() })), true); };
   replay = () => { this.t0 = performance.now(); };
 
@@ -826,7 +834,7 @@ class Component extends DCLogic {
         const rot = Math.sin(t * .5 + g.ph) * .025;
         const put = (Ls, al) => {
           if (al < .01) return;
-          [['leaf', sp.leaf], ['stem', sp.stem], ['flower', sp.flower]].forEach(([k, cv]) => { const x = Ls[k]; x.save(); x.globalAlpha = al; x.translate(0, -LIFT); x.translate(sp.baseX, sp.baseY); x.rotate(rot); x.translate(-sp.baseX, -sp.baseY); x.drawImage(cv, 0, 0); x.restore(); });
+          [['leaf', sp.leaf], ['stem', sp.stem], ['flower', sp.flower]].forEach(([k, cv]) => { const x = Ls[k]; x.save(); x.globalAlpha = al; x.translate(0, -LIFT); x.translate(sp.baseX, sp.baseY); x.rotate(rot); x.translate(-sp.baseX, -sp.baseY); x.drawImage(cv, 0, 0); if (k === 'stem') { x.strokeStyle = rgba(sp.stemCol, .9); x.lineWidth = 2.2; x.lineCap = 'butt'; x.beginPath(); x.moveTo(sp.rootX, sp.baseY - 6); x.lineTo(sp.rootX, sp.baseY + LIFT + 30); x.stroke(); } x.restore(); });
           // （花头后面的光晕已去掉）
         };
         put(blurSet, (1 - f) * dim); put(sharpSet, f * dim);
@@ -897,7 +905,7 @@ class Component extends DCLogic {
       cells, acts, seedBlobs,
       photoFilter: (this.props.photosBW ?? false) ? 'grayscale(1)' : 'none',
       scale: st.scale, stageW: Math.floor(1600 * st.scale), stageH: Math.floor(936 * st.scale), wrapRef: this.wrapRef, plantRef: this.plantRef, overRef: this.overRef,
-      tags: this.tagWords(m), packDate: (() => { const ds = st.items.map(it => it.date).filter(Boolean); if (!ds.length) return '—'; const a = new Date(Math.min(...ds)), b = new Date(Math.max(...ds)), p2 = n => String(n).padStart(2, '0'), hm = d => p2(d.getHours()) + ':' + p2(d.getMinutes()); return a.getFullYear() + '.' + p2(a.getMonth() + 1) + '.' + p2(a.getDate()) + ' ' + hm(a) + '–' + hm(b) + ' · ' + st.items.length; })(),
+      tags: this.tagWords(m), packDate: (() => { const ds = st.items.map(it => it.date).filter(Boolean); if (!ds.length) return '—'; const a = new Date(Math.min(...ds)), b = new Date(Math.max(...ds)), p2 = n => String(n).padStart(2, '0'), hm = d => p2(d.getHours()) + ':' + p2(d.getMinutes()); return p2(a.getMonth() + 1) + '.' + p2(a.getDate()) + ' ' + hm(a) + (hm(a) === hm(b) ? '' : '–' + hm(b)) + ' · ' + st.items.length; })(),
       boardH: Math.ceil(st.boardH || 844), plantS: st.plantS || .968, plantL: PX, plantT: PY, topY: 52, botY: 30,
       strip: (() => { // 写真の帯：撮影順。選ばれた写真が真ん中に来るように並べる
         const fk = st.hp != null ? st.hp : st.autoK, ord = m.plants.map(p => p.i), n = ord.length, ci = Math.max(0, ord.indexOf(fk)), S = 60, B = 84, G = 8;
