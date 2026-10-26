@@ -13,6 +13,7 @@
 <script src="_ds/modernist-b797ad02-10da-4586-840a-5580f3b31d75/_ds_bundle.js"></script>
 <script src="lib/lite.umd.js"></script>
 <script src="lib/seedpack_png.js?v=2"></script>
+<script src="lib/seedvault.js"></script>
 <script src="lib/tf.min.js"></script>
 <script src="lib/coco-ssd.min.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Archivo:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
@@ -58,6 +59,11 @@ html,body{overscroll-behavior:none;}
         <span style="font:500 12px 'Noto Sans JP',sans-serif;color:#605d5d;">ニックネーム</span>
         <input data-name="1" type="text" maxlength="16" placeholder="なまえ" style="height:44px;border-radius:12px;border:1.5px solid #201e1d;background:#fbfbf9;padding:0 14px;font:500 16px 'Noto Sans JP',sans-serif;color:#201e1d;outline:none;-webkit-user-select:text;user-select:text;">
         <i data-mycolor="1" style="width:12px;height:12px;border-radius:50%;margin-top:2px;"></i>
+        <span style="font:500 12px 'Noto Sans JP',sans-serif;color:#605d5d;margin-top:10px;">写真を見せる番号（6 けた）</span>
+        <span style="display:flex;gap:8px;">
+          <input data-pin="1" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" style="height:44px;border-radius:12px;border:1.5px solid #201e1d;background:#fbfbf9;padding:0 14px;font:500 16px 'Noto Sans JP',sans-serif;color:#201e1d;outline:none;-webkit-user-select:text;user-select:text;flex:1;min-width:0;letter-spacing:.2em;font-family:'IBM Plex Mono',monospace;">
+          <span data-rand="1" style="display:inline-flex;align-items:center;height:44px;padding:0 14px;border-radius:12px;border:1.5px solid #201e1d;font:600 12px 'Noto Sans JP',sans-serif;">ランダム</span>
+        </span>
       </div>
       <div data-start="1" style="display:inline-flex;align-items:center;height:44px;padding:0 28px;border-radius:22px;background:#201e1d;color:#f3f2f2;font:600 14px 'Noto Sans JP',sans-serif;">はじめる</div>
     </div>
@@ -566,10 +572,13 @@ class Component extends DCLogic {
   componentDidMount() {
     const bindStart = () => { const el = document.querySelector('[data-start]'), nm = document.querySelector('[data-name]'), dot = document.querySelector('[data-mycolor]'); if (!el) return setTimeout(bindStart, 200); if (el._b) return; el._b = 1;
       const me = getOwner(); if (nm && me.name) nm.value = me.name; if (dot) dot.style.background = me.color;
+      const pin = document.querySelector('[data-pin]'), rnd = document.querySelector('[data-rand]'), newPin = () => String(Math.floor(Math.random() * 1e6)).padStart(6, '0');
+      if (pin) { pin.value = me.pin || newPin(); pin.addEventListener('input', () => { pin.value = pin.value.replace(/\D/g, '').slice(0, 6); }); }
+      if (rnd) rnd.addEventListener('click', () => { if (pin) pin.value = newPin(); });
       el.addEventListener('click', () => {
         // 許可のたずね方は、タップの中ですぐ（await の前に）呼ぶ必要がある
         // iPhone の傾きセンサーは今は使わない（許可の画面が出ないため）
-        const o = getOwner(); o.name = (nm && nm.value.trim()) || null; try { localStorage.setItem('seedOwner', JSON.stringify(o)); } catch (e) {}
+        const o = getOwner(); o.name = (nm && nm.value.trim()) || null; o.pin = pin && pin.value.length === 6 ? pin.value : newPin(); try { localStorage.setItem('seedOwner', JSON.stringify(o)); } catch (e) {}
         if (nm) nm.blur();
         this.setState({ started: true, ownerName: o.name });
       }); };
@@ -711,7 +720,14 @@ class Component extends DCLogic {
   // 種パックの保存：種パックの画像（.seedpack.png）だけ
   save = async () => {
     const st = this.state, m = this.model(); if (!st.items.length || !st.an.length) return;
-    const pack = await buildPack(st, m, this), packPng = await packToPng(pack);
+    const pack = await buildPack(st, m, this);
+    // 写真を番号で暗号化して種パックに入れる（番号は種パックには入れない）。物体の位置も記録
+    const photos = {}, own = getOwner();
+    m.plants.forEach((p, k) => { const it = st.items[p.i], a = st.an[p.i], sd = pack.seeds[k]; if (!it || !it.img || !sd) return; photos[sd.id] = it.img;
+      const iw = it.img.naturalWidth, ih = it.img.naturalHeight; sd.frame = { aspect: +(iw / ih).toFixed(3) }; if (a && a.obj) sd.frame.obj = a.obj.bbox.map((v, i) => +(v / (i % 2 ? ih : iw)).toFixed(3)); });
+    if (own.pin) await vaultSeal(pack, own.pin, photos);
+    delete pack.owner.pin;
+    const packPng = await packToPng(pack);
     this.deliver(packPng, pack.id + '.seedpack.png'); window.__lastPack = pack;
   };
   dl(href, name) { const a = document.createElement('a'); a.href = href; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }

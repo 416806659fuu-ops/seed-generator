@@ -36,7 +36,7 @@
   #kehai .tm { color: #8d8a84; margin-left: auto; }
   #kehai .kw { font: 400 13px 'Noto Sans JP', sans-serif; color: #605d5d; }
   #kehai .pass { display: none; gap: 8px; } #kehai .pass.on { display: flex; }
-  #kehai .pass input { flex: 1; min-width: 0; height: 38px; border-radius: 19px; border: 1.5px solid #201e1d; background: #fbfbf9; padding: 0 14px; font: 500 14px 'Noto Sans JP', sans-serif; outline: none; }
+  #kehai .pass input { letter-spacing: .2em; font-family: 'IBM Plex Mono', monospace; flex: 1; min-width: 0; height: 38px; border-radius: 19px; border: 1.5px solid #201e1d; background: #fbfbf9; padding: 0 14px; font: 500 14px 'Noto Sans JP', sans-serif; outline: none; }
   #kehai .note { font: 400 12px 'Noto Sans JP', sans-serif; color: #a0532e; min-height: 16px; }
   #kehai .shake { animation: shake .35s; } @keyframes shake { 25% { transform: translateX(-6px) } 75% { transform: translateX(6px) } }
   #trayHint { font: 400 12px 'IBM Plex Mono', 'Noto Sans SC', monospace; color: #8d8a84; line-height: 1.5; }
@@ -58,7 +58,7 @@
     <div class="meta"><i class="dot"></i><span class="who"></span><span class="tm"></span></div>
     <div class="kw"></div>
     <div class="ask"><button class="pill" id="askBtn">写真を見る</button></div>
-    <div class="pass"><input id="passIn" type="password" placeholder="持ち主の合言葉" autocomplete="off"><button class="pill dark" id="passGo">開く</button></div>
+    <div class="pass"><input id="passIn" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="持ち主の番号（6 けた）" autocomplete="off"><button class="pill dark" id="passGo">開く</button></div>
     <div class="note"></div>
   </div>
   <div id="tray"></div>
@@ -296,7 +296,7 @@ document.getElementById('askBtn').onclick = () => { kh.querySelector('.pass').cl
 async function tryOpen() {
   const it = khSel, pk = it && packOf(it), inp = document.getElementById('passIn'), note = kh.querySelector('.note'); if (!pk) return;
   note.textContent = '…'; const key = await vaultKey(pk, inp.value);
-  if (!key) { note.textContent = '合言葉が違います'; inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); return; }
+  if (!key) { note.textContent = '番号が違います'; inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); return; }
   const url = await vaultPhoto(pk, key, it.sd.id); inp.value = ''; kh.querySelector('.pass').classList.remove('on'); note.textContent = '';
   khImg.src = url; khImg.onload = () => khImg.classList.add('on');
   // しばらく見せたら、また気配にもどる（写真は残さない）
