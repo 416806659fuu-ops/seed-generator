@@ -34,7 +34,7 @@ a{color:var(--color-text);} a:hover{color:var(--color-accent);}
       <button onClick="{{ clear }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.75);color:#201e1d;">クリア</button>
       <span style="display:flex;gap:8px;">
         <button onClick="{{ loadSample }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.75);color:#201e1d;">サンプル</button>
-        <label onClick="{{ pick }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;background:#ec3013;color:#fff;">＋ 写真<input type="file" accept="image/*" multiple="multiple" onChange="{{ onFiles }}" style="display:none;"></label>
+        <label style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;background:#ec3013;color:#fff;">＋ 写真<input type="file" accept="image/*" multiple="multiple" data-files="1" style="display:none;"></label>
       </span>
     </div>
     <div style="position:absolute;left:0;right:0;bottom:84px;height:110px;z-index:4;">
@@ -530,6 +530,12 @@ class Component extends DCLogic {
   };
   gyro = () => { DeviceOrientationEvent.requestPermission().then(r => { if (r === 'granted') this.setState({ gyroOn: true }); }).catch(() => {}); if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(() => {}); };
   componentDidMount() {
+    // 写真の input はテンプレートのイベントだと change が届かないことがあるので、直接つなぐ
+    const bindFile = () => { const inp = document.querySelector('input[data-files]'); if (!inp) return setTimeout(bindFile, 200); if (inp._b) return; inp._b = 1;
+      inp.addEventListener('click', () => setTimeout(this.pick, 50));
+      inp.addEventListener('change', () => { const files = Array.from(inp.files || []); inp.value = ''; this.onFiles({ target: { files } }); });
+      inp.addEventListener('cancel', () => this.setState({ picking: false })); };
+    bindFile();
     window.addEventListener('resize', () => this.fit());
     // 长按照片 0.6 秒 → 删除这一张，剩下的重新排版
     const board = () => this.wrap && this.wrap.firstElementChild;
