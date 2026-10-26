@@ -23,6 +23,22 @@
   .pill { height: 38px; padding: 0 22px; border-radius: 19px; font: 500 14px "IBM Plex Mono", "Noto Sans JP", "Noto Sans SC", monospace; cursor: pointer; border: 1.5px solid #201e1d; background: transparent; color: #201e1d; display: flex; align-items: center; }
   .pill.dark { background: #201e1d; color: #f3f2f2; border: 0; }
   #msg { position: absolute; right: 50px; top: 20px; font: 400 14px "Noto Sans JP", "Noto Sans SC"; color: #a0532e; z-index: 60; }
+  /* 植物を選んだとき：その写真の「気配」（空の色・色のかたまり・物体の位置）。合言葉で本物の写真 */
+  #kehai { position: absolute; left: 60px; top: 150px; width: 270px; display: none; flex-direction: column; gap: 10px; z-index: 30; }
+  #kehai.on { display: flex; }
+  #kehai .fr { position: relative; width: 270px; border-radius: 22px; overflow: hidden; background: #fbfbf9; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 10px 28px rgba(30,30,25,.14); }
+  #kehai canvas, #kehai img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  #kehai .blob { filter: blur(14px); transform: scale(1.12); }
+  #kehai img { object-fit: cover; opacity: 0; transition: opacity 1.2s; }
+  #kehai img.on { opacity: 1; }
+  #kehai .meta { display: flex; align-items: center; gap: 8px; font: 500 13px 'IBM Plex Mono', 'Noto Sans JP', monospace; }
+  #kehai .dot { width: 9px; height: 9px; border-radius: 50%; }
+  #kehai .tm { color: #8d8a84; margin-left: auto; }
+  #kehai .kw { font: 400 13px 'Noto Sans JP', sans-serif; color: #605d5d; }
+  #kehai .pass { display: none; gap: 8px; } #kehai .pass.on { display: flex; }
+  #kehai .pass input { flex: 1; min-width: 0; height: 38px; border-radius: 19px; border: 1.5px solid #201e1d; background: #fbfbf9; padding: 0 14px; font: 500 14px 'Noto Sans JP', sans-serif; outline: none; }
+  #kehai .note { font: 400 12px 'Noto Sans JP', sans-serif; color: #a0532e; min-height: 16px; }
+  #kehai .shake { animation: shake .35s; } @keyframes shake { 25% { transform: translateX(-6px) } 75% { transform: translateX(6px) } }
   #trayHint { font: 400 12px 'IBM Plex Mono', 'Noto Sans SC', monospace; color: #8d8a84; line-height: 1.5; }
 </style>
 </head>
@@ -37,11 +53,20 @@
     <button class="pill" id="clearAll">クリア</button>
   </div>
   <div id="msg"></div>
+  <div id="kehai">
+    <div class="fr"><canvas class="blob" width="520" height="520"></canvas><canvas class="line" width="520" height="520"></canvas><img class="photo" alt=""></div>
+    <div class="meta"><i class="dot"></i><span class="who"></span><span class="tm"></span></div>
+    <div class="kw"></div>
+    <div class="ask"><button class="pill" id="askBtn">写真を見る</button></div>
+    <div class="pass"><input id="passIn" type="password" placeholder="持ち主の合言葉" autocomplete="off"><button class="pill dark" id="passGo">開く</button></div>
+    <div class="note"></div>
+  </div>
   <div id="tray"></div>
 </div>
 
 <script src="lib/seedcore_lsys1.js"></script>
 <script src="lib/seedpack_png.js?v=2"></script>
+<script src="lib/seedvault.js"></script>
 <script>
 // ===== 种子花园 v0.3：透视的地面；种子包先放在旁边，由每个人自己拖到地面上撒 =====
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d'), CW = 1600, CH = 936, DPR = 2;
@@ -197,6 +222,7 @@ function frame(now) {
     if (it.grow < .6) { ctx.save(); ctx.globalAlpha = 1 - it.grow / .6; drawSeed(ctx, it, p[0] + it.dx * 1, p[1] - it.fall); ctx.restore(); }
   }
   links(ctx, now); timeline(ctx);
+  if (sel !== khSel) showKehai(sel);
 }
 // ---------- 方案 5：时间的重合 ----------
 // 点一株植物 → 天空变成它那张照片的天空；别人（其他种子包）在前后 30 分钟内拍下的植物，和它之间连起一条细线；下方时间轴标出拍摄时刻
@@ -238,6 +264,46 @@ function timeline(c) {
   else { c.textAlign = 'left'; c.fillText(hm(t0), X0, Y + 20); c.textAlign = 'right'; c.fillText(hm(t1), X1, Y + 20); }
   c.restore();
 }
+// ---------- 気配と写真 ----------
+const KW = { '晴': '晴れ', '阴': 'くもり', '黄昏': '夕暮れ', '池塘': '池', '自行车': '自転車', '野餐': 'ピクニック', '街道': '街', '河边': '川辺', '鸟': '鳥', '树林': '林', '公园': '公園', '食物': '食べ物', '动物': '動物' };
+const OBJ_JA = { bicycle: '自転車', bird: '鳥', person: '人', pizza: 'ピザ', cup: 'カップ', bowl: 'お椀', 'dining table': 'テーブル', dog: '犬', cat: '猫', motorcycle: 'バイク', bottle: 'ボトル', cake: 'ケーキ', sandwich: 'サンドイッチ' };
+const kh = document.getElementById('kehai'), khImg = kh.querySelector('.photo'); let khSel = null, khTimer = null;
+function packOf(it) { const P = packs.find(p => p.pack.id === it.pk); return P && P.pack; }
+function showKehai(it) {
+  khSel = it; clearTimeout(khTimer); khImg.classList.remove('on'); kh.querySelector('.pass').classList.remove('on'); kh.querySelector('.note').textContent = '';
+  if (!it) { kh.classList.remove('on'); return; }
+  const sd = it.sd, pk = packOf(it) || {}, fr = sd.frame || { aspect: 1.333 }, W = 270, H = Math.round(Math.max(200, Math.min(360, W / fr.aspect)));
+  kh.querySelector('.fr').style.height = H + 'px';
+  const b = kh.querySelector('.blob').getContext('2d'), l = kh.querySelector('.line').getContext('2d'), CWk = 520, CHk = 520;
+  b.clearRect(0, 0, CWk, CHk); l.clearRect(0, 0, CWk, CHk);
+  // 上：空の 5 色（上→下）、下：その写真の主な色のかたまり
+  const sky = sd.sky || ['#cfd8e2', '#d8dfe7', '#e2e7ec', '#ebeef1', '#f1f2f3'], g = b.createLinearGradient(0, 0, 0, CHk * .55);
+  sky.forEach((c, i) => g.addColorStop(i / (sky.length - 1), c)); b.fillStyle = g; b.fillRect(0, 0, CWk, CHk * .6);
+  const cols = [sd.color.base, sd.color.leaf, sd.color.stem, ...(sd.color.flower || [])].filter(Boolean), R = rng(sd.plant.seed);
+  b.fillStyle = sd.color.base || '#a9a59a'; b.fillRect(0, CHk * .5, CWk, CHk * .5);
+  for (let i = 0; i < 14; i++) { b.fillStyle = cols[i % cols.length]; b.globalAlpha = .75; b.beginPath(); b.ellipse(R() * CWk, CHk * (.5 + R() * .5), 40 + R() * 90, 25 + R() * 50, 0, 0, Math.PI * 2); b.fill(); }
+  b.globalAlpha = 1;
+  // 物体があった場所：持ち主の色の点線
+  if (fr.obj) { const [x, y, w, h] = fr.obj; l.strokeStyle = it.ocol || '#201e1d'; l.lineWidth = 4; l.setLineDash([10, 10]); l.strokeRect(x * CWk, y * CHk, w * CWk, h * CHk); }
+  const own = pk.owner || {}; kh.querySelector('.dot').style.background = it.ocol || '#999'; kh.querySelector('.who').textContent = own.name || 'seed pack';
+  const m = /T(\d\d:\d\d)/.exec(sd.t || ''); kh.querySelector('.tm').textContent = m ? m[1] : '';
+  const tg = sd.tags || {}, words = [KW[tg.weather] || tg.weather, OBJ_JA[tg.object] || KW[tg.scene] || tg.scene].filter(Boolean);
+  kh.querySelector('.kw').textContent = words.join(' · ');
+  kh.querySelector('.ask').style.display = pk.vault && pk.vault.photos[sd.id] ? '' : 'none';
+  kh.classList.add('on');
+}
+document.getElementById('askBtn').onclick = () => { kh.querySelector('.pass').classList.add('on'); const i = document.getElementById('passIn'); i.value = ''; i.focus(); };
+async function tryOpen() {
+  const it = khSel, pk = it && packOf(it), inp = document.getElementById('passIn'), note = kh.querySelector('.note'); if (!pk) return;
+  note.textContent = '…'; const key = await vaultKey(pk, inp.value);
+  if (!key) { note.textContent = '合言葉が違います'; inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake'); return; }
+  const url = await vaultPhoto(pk, key, it.sd.id); inp.value = ''; kh.querySelector('.pass').classList.remove('on'); note.textContent = '';
+  khImg.src = url; khImg.onload = () => khImg.classList.add('on');
+  // しばらく見せたら、また気配にもどる（写真は残さない）
+  clearTimeout(khTimer); khTimer = setTimeout(() => { khImg.classList.remove('on'); setTimeout(() => { URL.revokeObjectURL(url); khImg.removeAttribute('src'); }, 1300); }, 20000);
+}
+document.getElementById('passGo').onclick = tryOpen;
+document.getElementById('passIn').addEventListener('keydown', e => { if (e.key === 'Enter') tryOpen(); });
 function pick(bx, by) {
   const hit = items.filter(it => it.box && it.grow > .5 && bx >= it.box[0] && bx <= it.box[0] + it.box[2] && by >= it.box[1] && by <= it.box[1] + it.box[3]);
   if (!hit.length) return null;
