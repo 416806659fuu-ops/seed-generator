@@ -41,7 +41,7 @@
   #kehai .kw { font: 400 11px 'Noto Sans JP', sans-serif; color: #605d5d; }
   #kehai .main .kcard .kw { font-size: 13px; }
   #kehai .ph { align-self: flex-start; font: 600 11px 'Noto Sans JP', sans-serif; padding: 4px 12px; border: 1.5px solid #201e1d; border-radius: 13px; cursor: pointer; background: transparent; }
-  #kehai .sec { display: none; flex-direction: column; gap: 8px; } #kehai .sec.on { display: flex; }
+  #kehai .sec { display: none; flex-direction: column; gap: 8px; margin-top: 8px; padding-top: 12px; border-top: 1px solid rgba(32,30,29,.15); } #kehai .sec.on { display: flex; }
   #kehai .hd { display: flex; align-items: center; gap: 8px; font: 500 12px 'Noto Sans JP', sans-serif; color: #201e1d; margin-top: 6px; }
   #kehai .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 10px; }
   #kehai .pass { display: none; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 2; background: rgba(243,242,242,.92); padding: 6px; border-radius: 22px; }
@@ -68,8 +68,8 @@
     <div class="pass"><span class="pw"></span><input id="passIn" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="番号（6 けた）" autocomplete="off"><button class="pill dark" id="passGo">開く</button></div>
     <div class="note"></div>
     <div class="main"></div>
-    <div class="sec same"><div class="hd"><svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke="#201e1d" stroke-width="1.6"/></svg>同じ植物</div><div class="grid"></div></div>
-    <div class="sec near"><div class="hd"><svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke="#201e1d" stroke-width="1.6" stroke-dasharray="2 4"/></svg>同じ時間</div><div class="grid"></div></div>
+    <div class="sec same"><div class="grid"></div></div>
+    <div class="sec near"><div class="grid"></div></div>
   </div>
   <div id="tray"></div>
 </div>
