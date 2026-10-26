@@ -20,6 +20,9 @@
 body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body),"Noto Sans JP", "Noto Sans SC",sans-serif;}
 a{color:var(--color-text);} a:hover{color:var(--color-accent);}
 @keyframes seedspin{to{transform:rotate(360deg)}}
+/* 長押し・ドラッグで文字や画像が選択されないように（iPhone の青い選択枠を出さない） */
+*{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
+html,body{overscroll-behavior:none;}
 </style>
 </helmet>
 <div style="position:fixed;inset:0;overflow:hidden;background:#f3f2f2;">
