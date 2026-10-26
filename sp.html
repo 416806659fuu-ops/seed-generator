@@ -19,6 +19,7 @@
 <style>
 body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body),"Noto Sans JP", "Noto Sans SC",sans-serif;}
 a{color:var(--color-text);} a:hover{color:var(--color-accent);}
+@keyframes seedspin{to{transform:rotate(360deg)}}
 </style>
 </helmet>
 <div style="position:fixed;inset:0;overflow:hidden;background:#f3f2f2;">
@@ -27,13 +28,13 @@ a{color:var(--color-text);} a:hover{color:var(--color-accent);}
     <canvas ref="{{ overRef }}" width="780" height="2000" style="position:absolute;left:0;top:0;width:390px;height:1000px;pointer-events:none;"></canvas>
     <div style="position:absolute;left:0;right:0;top:40%;display:{{ emptyDisp }};justify-content:center;font-size:17px;font-weight:700;color:#605d5d;">写真を入れてください</div>
     <div style="position:absolute;inset:0;display:{{ progDisp }};align-items:center;justify-content:center;background:rgba(251,251,249,.6);z-index:20;">
-      <svg width="64" height="64" viewBox="0 0 64 64" style="display:block;"><circle cx="32" cy="32" r="26" fill="none" stroke="rgba(32,30,29,.12)" stroke-width="5"></circle><circle cx="32" cy="32" r="26" fill="none" stroke="#201e1d" stroke-width="5" stroke-linecap="round" stroke-dasharray="163.36" stroke-dashoffset="{{ progOff }}" transform="rotate(-90 32 32)" style="transition:stroke-dashoffset .3s;"></circle></svg>
+      <svg width="64" height="64" viewBox="0 0 64 64" style="display:block;animation:seedspin 1.4s linear infinite;"><circle cx="32" cy="32" r="26" fill="none" stroke="rgba(32,30,29,.12)" stroke-width="5"></circle><circle cx="32" cy="32" r="26" fill="none" stroke="#201e1d" stroke-width="5" stroke-linecap="round" stroke-dasharray="163.36" stroke-dashoffset="{{ progOff }}" transform="rotate(-90 32 32)" style="transition:stroke-dashoffset .3s;"></circle></svg>
     </div>
     <div style="position:absolute;left:18px;right:18px;top:{{ topY }}px;display:flex;justify-content:space-between;gap:8px;z-index:5;">
       <button onClick="{{ clear }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.75);color:#201e1d;">クリア</button>
       <span style="display:flex;gap:8px;">
         <button onClick="{{ loadSample }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.75);color:#201e1d;">サンプル</button>
-        <label style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;background:#ec3013;color:#fff;">＋ 写真<input type="file" accept="image/*" multiple="multiple" onChange="{{ onFiles }}" style="display:none;"></label>
+        <label onClick="{{ pick }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;background:#ec3013;color:#fff;">＋ 写真<input type="file" accept="image/*" multiple="multiple" onChange="{{ onFiles }}" style="display:none;"></label>
       </span>
     </div>
     <div style="position:absolute;left:0;right:0;bottom:84px;height:110px;z-index:4;">
@@ -609,8 +610,17 @@ class Component extends DCLogic {
     this.setBusy(false, 1, failed ? `${failed} 枚読み込めませんでした（HEIC は Safari で入れるか、JPEG に変換してください）` : '');
     } finally { if (tok === this.tok) this._ingesting = false; }
   }
+  pick = () => {
+    this.setState({ picking: true });
+    const done = () => { window.removeEventListener('focus', onFocus); };
+    const onFocus = () => { setTimeout(() => { if (this.state.picking && !this.state.busy && !this._ingesting) this.setState({ picking: false }); }, 6000); done(); };
+    setTimeout(() => window.addEventListener('focus', onFocus), 300);
+    const inp = this.wrap && this.wrap.querySelector('input[type=file]'); if (inp && !inp._c) { inp._c = 1; inp.addEventListener('cancel', () => this.setState({ picking: false })); }
+  };
   onFiles = async e => {
+    this.setState({ picking: false });
     if (this._ingesting || this.state.busy) return;
+    this.setState({ busy: true, prog: 0 });
     const fs = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name));
     if (!fs.length) return;
     this.setBusy(true, 0, '撮影時刻を読み込み中…');
@@ -837,7 +847,7 @@ class Component extends DCLogic {
         let x = 195 - B / 2 - ord.slice(0, ci).length * (S + G);
         return ord.map((i, j) => { const on = i === fk, sz = on ? B : S, it = { k: i, x: Math.round(x), b: on ? 14 : 0, s: sz, bgi: 'url("' + items[i].src + '")', bp: (() => { const a = an[i]; if (!a || !a.obj) return 'center'; const [x, y, w, h] = a.obj.bbox; return `${Math.round((x + w / 2) / a.iw * 100)}% ${Math.round((y + h / 2) / a.ih * 100)}%`; })(), op: fk == null || on ? 1 : .6, sh: on ? '0 0 0 2.5px #fff, 0 6px 16px rgba(0,0,0,.22)' : '0 2px 6px rgba(0,0,0,.12)', sc: st.pressK === i ? .82 : 1, tap: () => this.setState({ hp: st.hp === i ? null : i, hg: st.hp === i ? null : m.pOf[i] }) }; x += sz + G; return it; });
       })(),
-      onMove: this.onMove, onLeave: this.onLeave, seedRef: this.seedRef, savePlant: this.savePlant, gyro: this.gyro, gyroDisp: window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && navigator.maxTouchPoints > 0 && !st.gyroOn ? 'block' : 'none', clear: this.clear, save: this.save, hintDisp: items.length && !st.busy ? 'block' : 'none', recogDisp: st.recog ? 'block' : 'none', recogOff: (163.36 * (1 - (st.recog || 0))).toFixed(1), emptyDisp: items.length || st.busy ? 'none' : 'flex', progDisp: st.busy ? 'flex' : 'none', progW: Math.round((st.prog || 0) * 100) + '%', progOff: (163.36 * (1 - (st.prog || 0))).toFixed(1), progText: st.progText, noteDisp: !st.busy && st.progText ? 'block' : 'none'
+      onMove: this.onMove, onLeave: this.onLeave, seedRef: this.seedRef, savePlant: this.savePlant, gyro: this.gyro, gyroDisp: window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && navigator.maxTouchPoints > 0 && !st.gyroOn ? 'block' : 'none', clear: this.clear, save: this.save, hintDisp: items.length && !st.busy ? 'block' : 'none', recogDisp: 'none', recogOff: (163.36 * (1 - (st.recog || 0))).toFixed(1), emptyDisp: items.length || st.busy ? 'none' : 'flex', progDisp: st.busy || st.recog || st.picking ? 'flex' : 'none', pick: this.pick, progW: Math.round((st.prog || 0) * 100) + '%', progOff: (163.36 * (1 - Math.max(.08, st.busy ? (st.prog || 0) * .3 : .3 + (st.recog || 0) * .7))).toFixed(1), progText: st.progText, noteDisp: !st.busy && st.progText ? 'block' : 'none'
     };
   }
 }
