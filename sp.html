@@ -48,6 +48,7 @@ a{color:var(--color-text);} a:hover{color:var(--color-accent);}
       <div style="position:absolute;left:11px;top:9px;font:500 7px 'IBM Plex Mono',monospace;line-height:1.35;color:#201e1d;pointer-events:none;">seed pack<br><span style="color:#8d8a84;">{{ packDate }}</span></div>
     </div>
     <button onClick="{{ gyro }}" style="position:absolute;right:18px;bottom:334px;display:{{ gyroDisp }};display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;height:28px;font-size:11px;border:0;background:rgba(251,251,249,.8);color:#201e1d;z-index:6;">傾けて揺らす</button>
+    <div style="position:absolute;left:18px;right:18px;top:96px;font:500 10px 'IBM Plex Mono',monospace;color:#a0532e;z-index:30;pointer-events:none;word-break:break-all;">{{ errText }}</div>
     <div style="position:absolute;left:18px;right:18px;bottom:{{ botY }}px;display:flex;justify-content:space-between;z-index:5;">
       <button onClick="{{ savePlant }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:rgba(251,251,249,.8);color:#201e1d;">植物を保存</button>
       <button onClick="{{ save }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:17px;font:600 13px 'IBM Plex Mono','Noto Sans JP',monospace;cursor:pointer;border:0;background:#201e1d;color:#f3f2f2;">種パックを保存</button>
@@ -148,7 +149,8 @@ const OBJ = {
 };
 const OBJ_ZH = { person: '人', bicycle: '自転車', motorcycle: 'バイク', bird: '鳥', cat: '猫', dog: '犬', horse: '馬', sheep: '羊', cow: '牛', bear: 'クマ', zebra: 'シマウマ', giraffe: 'キリン', elephant: 'ゾウ', pizza: 'ピザ', sandwich: 'サンドイッチ', cake: 'ケーキ', donut: 'ドーナツ', 'hot dog': 'ホットドッグ', bowl: 'お椀', cup: 'カップ', bottle: 'ボトル', 'wine glass': 'グラス' };
 let detP = null;
-const getDetector = () => detP || (detP = (window.cocoSsd ? cocoSsd.load({ base: 'mobilenet_v2', modelUrl: 'models/coco-ssd/model.json' }) : Promise.reject()).catch(() => null));
+const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
+const getDetector = () => detP || (detP = withTimeout((window.cocoSsd ? cocoSsd.load({ base: 'lite_mobilenet_v2', modelUrl: 'models/coco-ssd-lite/model.json' }) /* スマホ：軽いモデル（約 19MB→ 実機のメモリ不足を避ける） */ : Promise.reject()).catch(e => { window.__stage = 'detector error: ' + e; return null; }), 30000));
 // 小物体（远处的自行车、树上的鸟）整张图里容易漏：整张 + 2×2 重叠切块各识别一次，再合并
 async function detectTiled(det, img) {
   const W = img.naturalWidth, H = img.naturalHeight, out = [];
@@ -530,6 +532,9 @@ class Component extends DCLogic {
   };
   gyro = () => { DeviceOrientationEvent.requestPermission().then(r => { if (r === 'granted') this.setState({ gyroOn: true }); }).catch(() => {}); if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(() => {}); };
   componentDidMount() {
+    const showErr = m => this.setState({ errText: String(m).slice(0, 200) });
+    window.addEventListener('error', e => showErr('error: ' + (e.message || e)));
+    window.addEventListener('unhandledrejection', e => showErr('error: ' + (e.reason && (e.reason.message || e.reason))));
     // 写真の input はテンプレートのイベントだと change が届かないことがあるので、直接つなぐ
     const bindFile = () => { const inp = document.querySelector('input[data-files]'); if (!inp) return setTimeout(bindFile, 200); if (inp._b) return; inp._b = 1;
       inp.addEventListener('click', () => setTimeout(this.pick, 50));
@@ -599,7 +604,7 @@ class Component extends DCLogic {
     for (let j = 0; j < newItems.length; j++) {
       const it = newItems[j];
       if (det && it.img && it.an) {
-        const preds = await detectTiled(det, it.img);
+        const preds = (await withTimeout(detectTiled(det, it.img), 20000)) || [];
         if (tok !== this.tok) return;
         const ct = await clipTags(clf, it.img); if (ct) it.an = { ...it.an, clip: ct };
         if (it.act === 'other') it.act = ct && ct.sceneAct && ct.sceneP > .3 ? ct.sceneAct : decideAct(preds, await classifyScene(net, it.img));
@@ -853,7 +858,7 @@ class Component extends DCLogic {
         let x = 195 - B / 2 - ord.slice(0, ci).length * (S + G);
         return ord.map((i, j) => { const on = i === fk, sz = on ? B : S, it = { k: i, x: Math.round(x), b: on ? 14 : 0, s: sz, bgi: 'url("' + items[i].src + '")', bp: (() => { const a = an[i]; if (!a || !a.obj) return 'center'; const [x, y, w, h] = a.obj.bbox; return `${Math.round((x + w / 2) / a.iw * 100)}% ${Math.round((y + h / 2) / a.ih * 100)}%`; })(), op: fk == null || on ? 1 : .6, sh: on ? '0 0 0 2.5px #fff, 0 6px 16px rgba(0,0,0,.22)' : '0 2px 6px rgba(0,0,0,.12)', sc: st.pressK === i ? .82 : 1, tap: () => this.setState({ hp: st.hp === i ? null : i, hg: st.hp === i ? null : m.pOf[i] }) }; x += sz + G; return it; });
       })(),
-      onMove: this.onMove, onLeave: this.onLeave, seedRef: this.seedRef, savePlant: this.savePlant, gyro: this.gyro, gyroDisp: window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && navigator.maxTouchPoints > 0 && !st.gyroOn ? 'block' : 'none', clear: this.clear, save: this.save, hintDisp: items.length && !st.busy ? 'block' : 'none', recogDisp: 'none', recogOff: (163.36 * (1 - (st.recog || 0))).toFixed(1), emptyDisp: items.length || st.busy ? 'none' : 'flex', progDisp: st.busy || st.recog || st.picking ? 'flex' : 'none', pick: this.pick, progW: Math.round((st.prog || 0) * 100) + '%', progOff: (163.36 * (1 - Math.max(.08, st.busy ? (st.prog || 0) * .3 : .3 + (st.recog || 0) * .7))).toFixed(1), progText: st.progText, noteDisp: !st.busy && st.progText ? 'block' : 'none'
+      onMove: this.onMove, onLeave: this.onLeave, seedRef: this.seedRef, savePlant: this.savePlant, gyro: this.gyro, gyroDisp: window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && navigator.maxTouchPoints > 0 && !st.gyroOn ? 'block' : 'none', clear: this.clear, save: this.save, hintDisp: items.length && !st.busy ? 'block' : 'none', recogDisp: st.recog ? 'block' : 'none', recogOff: (163.36 * (1 - (st.recog || 0))).toFixed(1), emptyDisp: items.length || st.busy ? 'none' : 'flex', progDisp: st.busy || st.picking ? 'flex' : 'none', errText: st.errText || '', pick: this.pick, progW: Math.round((st.prog || 0) * 100) + '%', progOff: (163.36 * (1 - Math.max(.08, st.prog || 0))).toFixed(1), progText: st.progText, noteDisp: !st.busy && st.progText ? 'block' : 'none'
     };
   }
 }
